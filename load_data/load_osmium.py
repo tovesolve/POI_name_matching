@@ -1,3 +1,4 @@
+import datetime
 import osmium as osm
 import pandas as pd
 from pathlib import Path
@@ -81,13 +82,9 @@ df_osm['latitude'] = coordinates['latitude']      # add column longitude to the 
 df_osm['longitude'] = coordinates['longitude']      # add column latitude to the df
 df_osm.drop(['location'], axis=1, inplace=True)
 
-df_osm = df_osm[pd.to_numeric(df_osm['latitude']) < 28.591826]
-df_osm = df_osm[pd.to_numeric(df_osm['latitude']) > 28.567067]
-df_osm = df_osm[pd.to_numeric(df_osm['longitude']) > -81.372633]
-df_osm = df_osm[pd.to_numeric(df_osm['longitude']) < -81.303579]
-
-df_osm.to_pickle('./df_osm_florida.pkl')
+df_osm.to_pickle('./df_osm_florida' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl')
 
 
 print(df_osm)
+print('Number of rows in osm: ', df_osm.shape[0])
 #print(coordinates)

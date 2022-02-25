@@ -6,9 +6,6 @@ import mpu
 
 # Run script without warnings: python3 -W ignore test_compare.py
 
-df_osm = pd.read_pickle('df_osm_florida.pkl')   #read dataframe osm data
-df_yelp = pd.read_pickle('df_yelp_florida.pkl') #read dataframe yelp data
-
 pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
 
@@ -61,10 +58,23 @@ def distance_meters(lat1, lon1, lat2, lon2):
     #print(dist)
     return dist
 
+def restrict_dataset(df, top, bottom, left, right):
+    df = df[pd.to_numeric(df['latitude']) < top]
+    df = df[pd.to_numeric(df['latitude']) > bottom]
+    df = df[pd.to_numeric(df['longitude']) > left]
+    df = df[pd.to_numeric(df['longitude']) < right]
+    return df
+    
 
 
 def main():
-    df = close_pairs(df_osm, df_yelp, distance=0.002)  #0.001=111m
+    df_osm = pd.read_pickle('df_osm_florida.pkl')   #read dataframe osm data
+    df_yelp = pd.read_pickle('df_yelp_florida.pkl') #read dataframe yelp data
+
+    df_osm = restrict_dataset(df_osm, 28.616707, 28.567949, -81.405150, -81.315333) # 28.591826, 28.567067, -81.372633, -81.303579
+    df_yelp = restrict_dataset(df_yelp, 28.616707, 28.567949, -81.405150, -81.315333) # 28.591826, 28.567067, -81.372633, -81.303579
+
+    df = close_pairs(df_osm, df_yelp, distance=0.0005)  #0.001=111m
     print("Dataframe pairs:")
     print(df)
     print('Number of rows in labeled df: ', df.shape[0])
