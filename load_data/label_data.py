@@ -29,21 +29,24 @@ def close_pairs(df_osm, df_yelp, distance):
                 print(poi_osm['name'], " , ", poi_yelp['name'], ' distance between: ', poi_dist)
 
                 if poi_osm['name'].lower() == poi_yelp['name'].lower():
-                    df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': True}, ignore_index=True)
+                    df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 1}, ignore_index=True)
                 else:
                     while True:
                         str_num = input()
                         num = int(str_num)
-                        if num not in range(0,2): #restrict input to 0/1
-                            print("Only numbers 0 and 1 valid")
+                        if num not in range(0,3): #restrict input to 0/1
+                            print("Only numbers 0, 1 and 2 valid")
                         else:
                             break
 
                     if num == 1:
-                        df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': True}, ignore_index=True)
+                        df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 1}, ignore_index=True)
                         print('pair added')
                     elif num == 0:
-                        df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': False}, ignore_index=True)
+                        df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 0}, ignore_index=True)
+                        print('pair added')
+                    elif num == 2:
+                        df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 2}, ignore_index=True)
                         print('pair added')
 
     df_pairs.to_pickle('./df_pairs_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe
@@ -68,11 +71,13 @@ def restrict_dataset(df, top, bottom, left, right):
 
 
 def main():
-    df_osm = pd.read_pickle('df_osm_florida.pkl')   #read dataframe osm data
-    df_yelp = pd.read_pickle('df_yelp_florida.pkl') #read dataframe yelp data
+    df_osm = pd.read_pickle('df_osm_florida2022-02-25.094449.pkl')   #read dataframe osm data
+    df_yelp = pd.read_pickle('df_yelp_florida2022-02-25.093315.pkl') #read dataframe yelp data
 
     df_osm = restrict_dataset(df_osm, 28.616707, 28.567949, -81.405150, -81.315333) # 28.591826, 28.567067, -81.372633, -81.303579
-    df_yelp = restrict_dataset(df_yelp, 28.616707, 28.567949, -81.405150, -81.315333) # 28.591826, 28.567067, -81.372633, -81.303579
+    df_yelp = restrict_dataset(df_yelp, 29, 28.0, -81.405150, -81.315333) # 28.591826, 28.567067, -81.372633, -81.303579
+    print('Number of rows in labeled df_osm: ', df_osm.shape[0])
+    print('Number of rows in labeled df_yelp: ', df_yelp.shape[0])
 
     df = close_pairs(df_osm, df_yelp, distance=0.0005)  #0.001=111m
     print("Dataframe pairs:")
