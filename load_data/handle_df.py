@@ -25,14 +25,18 @@ def count_class(df):
     count_0 = 0
     count_1 = 0
     count_2 = 0
+    count_3 = 0
+    false_pairs = []
     true_pairs = []
     class2_pairs = []
+    class3_pairs = []
     max_dist = 0
     sum_dist = 0
     for index, pair in df.iterrows():
         ind = int(pair['match'])
         if  ind == 0:
             count_0 +=1
+            false_pairs.append((pair['osm_name'], pair['yelp_name'], pair['distance']))
         elif ind == 1:
             count_1 +=1
             true_pairs.append((pair['osm_name'], pair['yelp_name'], pair['distance']))
@@ -42,6 +46,9 @@ def count_class(df):
         elif ind == 2:
             count_2 += 1
             class2_pairs.append((pair['osm_name'], pair['yelp_name'], pair['distance']))
+        elif ind == 3:
+            count_3 += 1
+            class3_pairs.append((pair['osm_name'], pair['yelp_name'], pair['distance']))
     
     #for pair in true_pairs:
     #    print(pair)
@@ -49,7 +56,7 @@ def count_class(df):
     print('max_dist', max_dist)
     print('mean_dist ', sum_dist/count_1)
 
-    return count_0, count_1, count_2, true_pairs, class2_pairs
+    return count_0, count_1, count_2, count_3, false_pairs, true_pairs, class2_pairs, class3_pairs
 
 
 # Wierd
@@ -67,10 +74,11 @@ def extra_tags(true_pair_list):
 def main():
     df = pd.read_pickle(args.df)
     print('number of pairs: ', df.shape[0])
-    count_0, count_1, count_2, true_pairs, class2_pairs = count_class(df)
+    count_0, count_1, count_2, count_3, false_pairs, true_pairs, class2_pairs, class3_pairs = count_class(df)
     print('Number class 0: ', count_0)
     print('Number class 1: ', count_1)
     print('Number class 2: ', count_2)
+    print('Number class 3: ', count_3)
     for pair in class2_pairs:
         print(pair)
     #extra_tags(true_pairs)
