@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--osm_name', dest='osm_name')
 parser.add_argument('--yelp_name', dest='yelp_name')
 parser.add_argument('--new_value', dest='new_value')
+parser.add_argument('--df', dest = 'df')
 args = parser.parse_args()
 
 # Run script with name of both pois and new label (True/False)
@@ -29,12 +30,13 @@ def edit_label(df, osm_name, yelp_name, new_value):
 
 
 def main():
-    df = pd.read_pickle('df_pairs_1645521936.8028078.pkl')
-    if args.new_value == 'True':
-        edit_label(df, args.osm_name, args.yelp_name, True)
-    elif args.new_value == 'False':
-        edit_label(df, args.osm_name, args.yelp_name, False)
+    df = pd.read_pickle(args.df)
+    if int(args.new_value) == 1:
+        edit_label(df, args.osm_name, args.yelp_name, 1)
+    elif int(args.new_value) == 0:
+        edit_label(df, args.osm_name, args.yelp_name, 0)
     print(df)
+    df.to_pickle(args.df) # save dataframe
 
 
 if __name__ == "__main__":
