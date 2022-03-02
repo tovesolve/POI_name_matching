@@ -63,6 +63,29 @@ def extra_tags(true_pair_list):
                 
 
 
+def similar(true_pairs):
+    exact_pairs = []
+    exact_pairs_count = 0
+    similar_pairs = []
+    similar_pairs_count = 0
+    for pair in true_pairs:
+        if pair[0] == pair[1]:
+            exact_pairs.append(pair)
+            exact_pairs_count += 1
+        else:
+            similar_pairs.append(pair)
+            similar_pairs_count +=1
+    print("===Exact matches: =====")
+    for pair in exact_pairs:
+        print(pair)
+    print("===Similar matches: =====")
+    for pair in similar_pairs:
+        print(pair)
+    print("=============================================")
+    print("Number exact matches: ", exact_pairs_count, "     Number similar matches: ", similar_pairs_count)
+    return exact_pairs, similar_pairs, exact_pairs_count, similar_pairs_count
+
+
 
 def main():
     df = pd.read_pickle(args.df)
@@ -71,9 +94,10 @@ def main():
     print('Number class 0: ', count_0)
     print('Number class 1: ', count_1)
     print('Number class 2: ', count_2)
-    for pair in class2_pairs:
-        print(pair)
+    # for pair in class2_pairs:
+    #     print(pair)
     #extra_tags(true_pairs)
+    similar(true_pairs)
     
 
 
