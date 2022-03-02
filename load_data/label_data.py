@@ -32,7 +32,7 @@ def close_pairs(df_osm, df_yelp, distance):
                     #print('checking:', labeled_poi['osm_name'], poi_osm['name'], labeled_poi['yelp_name'], poi_yelp['name'])
                     if labeled_poi['osm_name'] == poi_osm['name'] and labeled_poi['yelp_name'] == poi_yelp['name']:
                         alreadyLabeled = True
-                        print('already labeled', labeled_poi['osm_name'], poi_osm['name'], labeled_poi['yelp_name'] == poi_yelp['name'])
+                        print('already labeled', labeled_poi['osm_name'], poi_osm['name'], labeled_poi['yelp_name'], poi_yelp['name'])
                         break
                         
                 if not alreadyLabeled:        
@@ -86,8 +86,22 @@ def restrict_dataset(df, top, bottom, left, right):
     return df
     
 
+def main_florida():
+    df_osm = pd.read_pickle('df_osm_florida2022-02-25.094449.pkl')   #read dataframe osm data
+    df_yelp = pd.read_pickle('df_yelp_florida2022-02-25.093315.pkl') #read dataframe yelp data
 
-def main():
+    df_osm = restrict_dataset(df_osm, 28.616707, 28.567949, -81.405150, -81.315333) # 28.591826, 28.567067, -81.372633, -81.303579
+    df_yelp = restrict_dataset(df_yelp, 28.616707, 28.567949, -81.405150, -81.315333) # 28.591826, 28.567067, -81.372633, -81.303579
+    print('Number of rows in labeled df_osm: ', df_osm.shape[0])
+    print('Number of rows in labeled df_yelp: ', df_yelp.shape[0])
+
+    df = close_pairs(df_osm, df_yelp, distance=0.0002)  #0.001=111m
+    print("Dataframe pairs:")
+    print(df)
+    print('Number of rows in labeled df: ', df.shape[0])
+
+
+def main_boston():
     df_osm = pd.read_pickle('df_osm_ma2022-02-25.104802.pkl')   #read dataframe osm data
     df_yelp = pd.read_pickle('df_yelp_ma2022-02-25.103519.pkl') #read dataframe yelp data
 
@@ -102,6 +116,11 @@ def main():
     print("Dataframe pairs:")
     print(df)
     print('Number of rows in labeled df: ', df.shape[0])
+
+
+def main():
+    main_florida()
+    #main_boston()
 
 if __name__ == "__main__":
     main()

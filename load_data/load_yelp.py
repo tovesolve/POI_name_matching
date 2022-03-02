@@ -12,7 +12,7 @@ drop_attributes = ['address', 'postal_code', 'stars', 'review_count', 'is_open',
 df.drop(drop_attributes, axis=1, inplace=True)
 df = df[df['state'] == 'FL']
 
-df.to_pickle('./df_yelp_florida' + + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl')
+df.to_pickle('./df_yelp_florida' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl')
 #pd.set_option("display.max_rows", None, "display.max_columns", None)
 print(df) #.loc[df['city'] == 'Altamonte Springs']
 print('Number of rows in yelp: ', df.shape[0])
