@@ -10,7 +10,7 @@ data_file.close()
 df = pd.DataFrame(data)
 drop_attributes = ['address', 'postal_code', 'stars', 'review_count', 'is_open', 'attributes', 'categories', 'hours']
 df.drop(drop_attributes, axis=1, inplace=True)
-df = df[df['state'] == 'FL']
+df = df[df['state'] == 'MA'] #change to area in yelp data set that we want to filter on.
 
 df.to_pickle('./df_yelp_florida' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl')
 #pd.set_option("display.max_rows", None, "display.max_columns", None)
