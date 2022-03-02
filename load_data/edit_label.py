@@ -35,7 +35,11 @@ def main():
         edit_label(df, args.osm_name, args.yelp_name, 1)
     elif int(args.new_value) == 0:
         edit_label(df, args.osm_name, args.yelp_name, 0)
-    print(df)
+    elif int(args.new_value) == 2:
+        edit_label(df, args.osm_name, args.yelp_name, 2)
+    elif int(args.new_value) == 3:
+        edit_label(df, args.osm_name, args.yelp_name, 3)
+    #print(df)
     df.to_pickle(args.df) # save dataframe
 
 
