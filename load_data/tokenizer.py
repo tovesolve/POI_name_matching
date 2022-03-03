@@ -1,12 +1,17 @@
 import datetime
 import pandas as pd
-from nltk.tokenize import word_tokenize, RegexpTokenizer
+from nltk.tokenize import word_tokenize, WhitespaceTokenizer
+from nltk.tokenize.api import StringTokenizer, TokenizerI
 import re
 
 
 pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
-
+def tokenize_on_space(string):
+    token_list = word_tokenize(string)
+    tokens = {t for t in token_list} 
+    return tokens
+        
 def tokenize_name(name):
     return word_tokenize(name)
 
