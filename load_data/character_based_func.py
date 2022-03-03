@@ -38,12 +38,13 @@ def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
     #df = pd.read_pickle('v0_df_pairs_florida2022-02-28.094015.pkl')
-    df = pd.read_pickle('df_pairs_boston2022-02-28.110406.pkl')
+    df = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')
     
     df = drop_rows_with_label(df, 2)
     df_scores_levenshtein = calculate_similarity_score(df, levenshtein_similarity)
     threshold = 0.7
-    precision, recall, f1_score = get_metrics(df_scores_levenshtein, threshold)
+    df_scores_levenshtein = score_to_label(df_scores_levenshtein, threshold)
+    precision, recall, f1_score, matthew = get_metrics(df_scores_levenshtein)
     
     # av de vi hittade, hur många hade vi labelat till 1, dvs av de vi hittade, hur många skulle hittas?
     print("precision: ", precision)
@@ -52,9 +53,11 @@ def main():
     print("recall: ", recall)
     
     print("f1_score: ", f1_score)
+    print("matthew: ", matthew)
     
     df_scores_dam = calculate_similarity_score(df, jaro_wrinkler_similarity)
-    precision_dam, recall_dam, f1_score_dam = get_metrics(df_scores_dam, threshold)
+    df_scores_dam = score_to_label(df_scores_dam, threshold)
+    precision_dam, recall_dam, f1_score_dam, matthew_dam = get_metrics(df_scores_dam)
     # av de vi hittade, hur många hade vi labelat till 1, dvs av de vi hittade, hur många skulle hittas?
     print("precision: ", precision_dam)
     
@@ -63,6 +66,8 @@ def main():
     
     # 
     print("f1_score: ", f1_score_dam)
+    
+    print("matthew: ", matthew_dam)
 
 if __name__ == "__main__":
     main()
