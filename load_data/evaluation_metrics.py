@@ -1,4 +1,3 @@
-from tkinter import CENTER
 from sklearn.metrics import precision_score, recall_score, f1_score, matthews_corrcoef, confusion_matrix, ConfusionMatrixDisplay, plot_confusion_matrix
 import numpy as np
 import pandas as pd

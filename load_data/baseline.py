@@ -1,5 +1,6 @@
 from character_based_func import *
 from drop_label import drop_rows_with_label
+from token_based_func import jaccard_similarity, cosine_similarity
 from evaluation_metrics import *
 from nltk.metrics.distance import edit_distance
 from nltk.metrics.distance import jaro_similarity as jaro
@@ -26,11 +27,10 @@ def baseline_script(df, sim_func_list, threshold_list):
             df_scores = score_to_label(df_scores, threshold)
             precision, recall, f1_score, matthew = get_metrics(df_scores)
             f1_scores.append(f1_score)
+            #print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score)
         dict[sim_func] = f1_scores
-    #plot graph
+    #plot graph#
     f1_comparision_graph(dict, threshold_list, sim_func_list)
-
-
 
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
@@ -39,7 +39,8 @@ def main():
     df = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')
     
     df = drop_rows_with_label(df, 2)
-    baseline_script(df, sim_func_list=[levenshtein_similarity, damarau_levenshtein_similarity, jaro_similarity], threshold_list=[0.5, 0.7, 1])
+    #baseline_script(df, sim_func_list=[levenshtein_similarity, damarau_levenshtein_similarity, jaro_similarity], threshold_list=[0.5, 0.7, 1])
+    baseline_script(df, sim_func_list=[cosine_similarity, jaccard_similarity], threshold_list=[0.5, 0.7, 1])
 
 
 if __name__ == "__main__":
