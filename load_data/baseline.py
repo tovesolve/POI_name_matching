@@ -50,8 +50,10 @@ def calculate_similarity_score(df, sim_func):
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
-    #df = pd.read_pickle('v0_df_pairs_florida2022-02-28.094015.pkl')
-    df = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')
+    df_florida = pd.read_pickle('v0_df_pairs_florida2022-02-28.094015.pkl')
+    df_boston = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')
+    df = pd.concat([df_florida, df_boston]) # concatenate the dataframes
+    print(df.shape[0])
     
     df = drop_rows_with_label(df, 2)
     #baseline_script(df, sim_func_list=[levenshtein_similarity, damarau_levenshtein_similarity, jaro_similarity], threshold_list=[0.5, 0.7, 1])
