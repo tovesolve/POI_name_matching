@@ -1,4 +1,5 @@
 from drop_label import drop_rows_with_label
+from baseline import calculate_similarity_score
 from evaluation_metrics import *
 from nltk.metrics.distance import edit_distance
 from nltk.metrics.distance import jaro_similarity as jaro
@@ -25,14 +26,6 @@ def jaro_wrinkler_similarity(str1, str2):
 
 def jaro_similarity(str1, str2):
     return jaro(str1, str2)
-
-def calculate_similarity_score(df, sim_func):
-    data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
-    df_scores = pd.DataFrame(columns=data_colnames)
-    for index, pair in df.iterrows():
-        score = sim_func(pair['osm_name'], pair['yelp_name'])
-        df_scores = df_scores.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': score}, ignore_index=True)
-    return df_scores
     
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
