@@ -18,12 +18,6 @@ label_value : int
     the value of the label to be dropped
 """
 
-# parsing input arguments from command line to variables
-parser = argparse.ArgumentParser()
-parser.add_argument('--df', dest = 'df')
-parser.add_argument('--label_value', dest='label_value')
-args = parser.parse_args()
-
 # option to show all rows in the dataframe when printing
 pd.set_option("display.max_rows", None, "display.max_columns", None)
 
@@ -47,14 +41,20 @@ def drop_rows_with_label(df, label_value):
     return df.drop(df[df['match'] == label_value].index)
 
 def main():
+    # parsing input arguments from command line to variables
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--df', dest = 'df')
+    parser.add_argument('--label_value', dest='label_value')
+    args = parser.parse_args()
+
     # reads the dataframe from the pickled file
     df = pd.read_pickle(args.df)
 
     # dropa all rows with the given label
     df = drop_rows_with_label(df, int(args.label_value))
-
+    print(df)
     # overwrites and saves dataframe
-    df.to_pickle(args.df)
+    #df.to_pickle(args.df)
 
 if __name__ == "__main__":
     main()

@@ -22,14 +22,6 @@ df : dataframe
     the pickled dataframe (.pkl-file) that contains the pair of POIs that should be edited
 """
 
-# parsing input arguments from command line to variables
-parser = argparse.ArgumentParser()
-parser.add_argument('--osm_name', dest='osm_name')
-parser.add_argument('--yelp_name', dest='yelp_name')
-parser.add_argument('--new_value', dest='new_value')
-parser.add_argument('--df', dest = 'df')
-args = parser.parse_args()
-
 # option to show all rows in the dataframe when printing
 pd.set_option("display.max_rows", None, "display.max_columns", None)
 
@@ -55,6 +47,14 @@ def edit_label(osm_name, yelp_name, new_value, df):
             #print('updated', pair)
 
 def main():
+    # parsing input arguments from command line to variables
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--osm_name', dest='osm_name')
+    parser.add_argument('--yelp_name', dest='yelp_name')
+    parser.add_argument('--new_value', dest='new_value')
+    parser.add_argument('--df', dest = 'df')
+    args = parser.parse_args()
+
     # reads the dataframe from the pickled file
     df = pd.read_pickle(args.df)
 
