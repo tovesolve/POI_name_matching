@@ -56,7 +56,7 @@ def get_metrics(df):
     f1 = f1_score(df['match'].tolist(), df['score'].tolist())
     matthew = matthews_corrcoef(df['match'].tolist(), df['score'].tolist())
     cm = get_confusion_matrix(df)
-    #display_confusion_matrix(cm)
+    display_confusion_matrix(cm)
     return precision, recall, f1, matthew
 
 def get_confusion_matrix(df):
@@ -87,7 +87,12 @@ def display_confusion_matrix(cm):
     display_labels=[0,1]
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=display_labels)
     disp.plot()
+    plt.title(str(""))
     plt.show()
+    
+    # saves the plot to a png file
+    fig, _ = plt.subplots()
+    fig.savefig("eval.png")
 
 def plot_evaluation_graph(metrics_object_dict, threshold_list, sim_func_list, metric):
     """
@@ -118,16 +123,16 @@ def plot_evaluation_graph(metrics_object_dict, threshold_list, sim_func_list, me
         start = start + width
 
     plt.xticks(X_axis, threshold_list)
-    plt.xlabel("Similarity functions")
-    plt.ylabel(str(metric)) #kolla på toves dator om detta funkar.
-    plt.title(str(metric) + " of different similarity functions")
+    plt.xlabel("threshold values")
+    plt.ylabel(str(metric))
+    plt.title(str(metric))
     plt.grid(axis='y')
     plt.legend()
     plt.show()
     
     # saves the plot to a png file
     fig, _ = plt.subplots()
-    #fig.savefig("eval.png")
+    fig.savefig("eval.png")
    
     
 def main():

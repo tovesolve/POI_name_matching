@@ -33,6 +33,25 @@ def get_corpus_from_df(df):
         corpus.append(row['yelp_name'])
     return set(corpus)
 
+#2d array ist'llet för set.
+def get_corpus_list_for_pystringmatching(df):
+    #vill ha det på det gär formatet istället
+    #corpus_list = [["armandos", "pizzeria"], ["armandos", "pizza"]]
+    
+
+    s = get_corpus_from_df(df)
+    
+    #print(s)
+    
+    new_corpus = []
+    for poi in s:
+        splitted_poi = poi.split()
+        #print(osm_poi)
+        new_corpus.append(splitted_poi)
+
+    #print(new_corpus)
+    return new_corpus
+
 
 #lite oklart vad som händer i vectorization funcs
 def count_vectorization(corpus):

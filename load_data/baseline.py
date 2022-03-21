@@ -3,10 +3,6 @@ from drop_label import drop_rows_with_label
 from token_based_func import *
 from token_based_func import jaccard_similarity, cosine_similarity
 from evaluation_metrics import *
-from nltk.metrics.distance import edit_distance
-from nltk.metrics.distance import jaro_similarity as jaro
-from nltk.metrics.distance import jaro_winkler_similarity as jaro_wrinkler
-from sklearn.metrics import precision_score, recall_score, f1_score
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -57,7 +53,7 @@ def baseline_script(df, sim_funcs, thresholds, metric):
         for threshold in thresholds:
             df_scores = calculate_similarity_score(df, sim_func)
             df_scores = classify_scores(df_scores, threshold)
-            precision, recall, f1_score, matthew = get_metrics(df_scores)
+            precision, recall, f1_score, matthew_correlation_coefficient = get_metrics(df_scores)
             if metric == "precision":
                 scores.append(precision)
             elif metric == "recall":
@@ -65,10 +61,10 @@ def baseline_script(df, sim_funcs, thresholds, metric):
             elif metric == "f1_score":
                 scores.append(f1_score)
             elif metric == "matthew":
-                scores.append(matthew)   
+                scores.append(matthew_correlation_coefficient)   
             #print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score)
         dict[sim_func] = scores
-    plot_evaluation_graph(dict, thresholds, sim_funcs, metric)
+    #plot_evaluation_graph(dict, thresholds, sim_funcs, metric)
 
 def calculate_similarity_score(df, sim_func):
     """
@@ -105,7 +101,7 @@ def main():
     parser.add_argument('--thresholds', dest = 'thresholds', nargs="*", type=float, default=[])
     parser.add_argument('--metric', dest = 'metric')
     args = parser.parse_args()
-
+    
     #iterates through the input dataframes and concatinates into one dataframe
     dfs_list = []
     for df in args.dfs:
@@ -124,11 +120,11 @@ def main():
         elif sim_func == 'jaccard_similarity':
             sim_func_list.append(jaccard_similarity)
         elif sim_func == 'jaro':
-            sim_func_list.append(jaro)
-        elif sim_func == 'jaro_wrinkler':
-            sim_func_list.append(jaro_wrinkler)
+            sim_func_list.append(jaro_similarity)
+        elif sim_func == 'jaro_winkler':
+            sim_func_list.append(jaro_winkler_similarity)
         elif sim_func == 'levenshtein_similarity':
-            sim_func_list.append(edit_distance)
+            sim_func_list.append(levenshtein_similarity)
 
     #runs the baseline script with input arguments.
     baseline_script(df, sim_funcs=sim_func_list, thresholds=args.thresholds, metric=args.metric)
