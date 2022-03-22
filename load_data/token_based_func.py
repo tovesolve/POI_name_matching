@@ -33,27 +33,33 @@ def get_corpus_from_df(df):
         corpus.append(row['yelp_name'])
     return set(corpus)
 
-#2d array ist'llet för set.
 def get_corpus_list_for_pystringmatching(df):
-    #vill ha det på det gär formatet istället
-    #corpus_list = [["armandos", "pizzeria"], ["armandos", "pizza"]]
-    
+    """
+    Creates a corpus from the given dataframe. The format is a 2D-array with seperators between words. Needed for package py-stringmatching.
+    Example format: [["armandos", "pizzeria"], ["armandos", "pizza"]]
+    To avoid duplicates we first transform the df into a set.
 
-    s = get_corpus_from_df(df)
-    
-    #print(s)
+    Parameters
+    ----------
+    df : dataframe
+        the dataframe used in the corpus
+    Returns
+    -------
+    list
+        a list containing all POI names in the dataframe in 2D-array format.
+    """
+
+    poi_set = get_corpus_from_df(df) #convert df to a set of POIs
     
     new_corpus = []
-    for poi in s:
-        splitted_poi = poi.split()
+    for poi in poi_set:
+        splitted_poi = poi.split() #split POIs on space-character.
         #print(osm_poi)
         new_corpus.append(splitted_poi)
-
     #print(new_corpus)
     return new_corpus
 
 
-#lite oklart vad som händer i vectorization funcs
 def count_vectorization(corpus):
     """
     Vectorizes the corpus using count vectorization and creates a document term matrix and a dataframe. These represent the frequency count of each token in the unique POI names in the corpus.

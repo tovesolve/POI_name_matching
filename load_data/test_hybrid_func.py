@@ -56,7 +56,7 @@ def main():
     curr_df, corpus_size = (local_df, 2) if corpus_list is None else ((document_frequency, corpus_size))
     
     print("curr", curr_df)
-    print("size", corpus_size) #antalet documents (POIs) i corpus
+    print("size", corpus_size) #number of documents (POIs) in corpus
 
     # if corpus is not provided treat input string as corpus
     curr_df, corpus_size = (local_df, 2)
