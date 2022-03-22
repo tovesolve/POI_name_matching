@@ -1,5 +1,5 @@
 from encodings import normalize_encoding
-from tokenizer import tokenize_on_space
+from tokenizer import *
 from drop_label import drop_rows_with_label
 from nltk.metrics.distance import jaccard_distance as jaccard
 from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine_similarity
@@ -76,7 +76,7 @@ def count_vectorization(corpus):
         A dataframe of the document term matrix
     """
     
-    vectorizer = CountVectorizer()
+    vectorizer = CountVectorizer(lowercase=False, token_pattern=r"\S+")
     
     # fit_transform creates a document term matrix from the corpus. Where every unique POI name is a row and every unique word in the corpus is a colum. The value at place ("POI name", "token") is the frequency of that token i the POI name, given by the countVectorization.
     # ex: Corpus: "Lucy's Restaurant", "Tove's Shop"
@@ -164,8 +164,8 @@ def jaccard_similarity(str1, str2, tokenizer_func=tokenize_on_space):
     float
         the normalized similarity score
     """
-    tokens1 = tokenizer_func(str1)
-    tokens2 = tokenizer_func(str2)
+    tokens1 = set(tokenizer_func(str1))
+    tokens2 = set(tokenizer_func(str2))
     j = jaccard(tokens1, tokens2)
     normalized_jaccard = 1-j
     return normalized_jaccard
