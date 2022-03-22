@@ -8,9 +8,8 @@ import re
 pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
 def tokenize_on_space(string):
-    token_list = word_tokenize(string)
-    tokens = {t for t in token_list} 
-    return tokens
+    pattern = r"\S+"
+    return re.findall(pattern, string)
         
 def tokenize_name(name):
     return word_tokenize(name)
@@ -42,18 +41,15 @@ def tokens_to_lower(token_list):
 
 #define and remove special characters
 def remove_special_characters(name):
-    pattern = r'[!,*)@#%(&$_?.^\'’´]'
-    mod_name = re.sub(pattern, '', name)
-
-    pattern = r'[é]'
-    mod_name = re.sub(pattern, 'e', mod_name)
-    return mod_name
+    pattern = r'\s.'
+    
+    return pattern
 
 
 def main():
     df = pd.read_pickle('df_pairs_1645521936.8028078.pkl')
     df = tokenize_dataframe(df)
-    df.to_pickle('./df_w_tokens' + str(datetime.datetime.now().strftime("%Y%m%d%H%M%S")) + '.pkl') # save dataframe
+    #df.to_pickle('./df_w_tokens' + str(datetime.datetime.now().strftime("%Y%m%d%H%M%S")) + '.pkl') # save dataframe
     print(df)
 
 if __name__ == "__main__":
