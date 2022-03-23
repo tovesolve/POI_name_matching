@@ -53,7 +53,7 @@ def get_corpus_list_for_pystringmatching(df):
     
     new_corpus = []
     for poi in poi_set:
-        splitted_poi = tokenize_on_space(poi) #split POIs on space-character.
+        splitted_poi = tokenize(poi) #split POIs on space-character.
         #print(osm_poi)
         new_corpus.append(splitted_poi)
     #print(new_corpus)

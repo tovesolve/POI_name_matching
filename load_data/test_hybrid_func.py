@@ -34,6 +34,8 @@ def softTFIDF(df, secondary_func=levenshtein_similarity, secondary_threshold = 0
     df_scores = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
     for index, pair in df.iterrows():
         score = calc_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, secondary_threshold, secondary_func, document_frequency)
+        #score = calc_softTFIDF_for_pair("Park Avenue Pizza", "Park Ave Pizza", corpus_list, secondary_threshold, secondary_func, document_frequency)
+        
         df_scores = df_scores.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': score}, ignore_index=True)
 
     return df_scores
@@ -47,8 +49,8 @@ def sim_check_for_exact_match(*args):
         return True
 
 def calc_softTFIDF_for_pair(osm_name, yelp_name, corpus_list, threshold, secondary_func, document_frequency):
-    tokenized_osm_name = tokenize_on_space(osm_name)
-    tokenized_yelp_name = tokenize_on_space(yelp_name)
+    tokenized_osm_name = tokenize(osm_name)
+    tokenized_yelp_name = tokenize(yelp_name)
     tf_x, tf_y = collections.Counter(tokenized_osm_name), collections.Counter(tokenized_yelp_name)
 
     # if the strings match exactly return 1.0
@@ -102,14 +104,20 @@ def calc_softTFIDF_for_pair(osm_name, yelp_name, corpus_list, threshold, seconda
             #print("idf second", idf_second)
             v_x = idf_first * tf_x.get(sim[first_string_pos], 0)
             v_y = idf_second * tf_y.get(sim[second_string_pos], 0)
-            #print(v_x)
+            
+            #v_x =  (log(idf_first) * log(tf_x.get(sim[first_string_pos], 0) + 1)) if True else (idf_first * tf_x.get(sim[first_string_pos], 0))
+            #v_y =  (log(idf_second) * log(tf_y.get(sim[second_string_pos], 0) + 1)) if True else (tf_y.get(sim[second_string_pos], 0))
+            #print("v_x:", v_x)
+            #print("v_y:", v_y)
             result += v_x * v_y * sim[sim_score_pos]
             #print("result: ", result)
         # denominator
         idf = corpus_size / curr_df[element]
         #print("idf", idf)
-        v_x = idf * tf_x.get(element, 0)
+        v_x = idf * tf_x.get(element, 0)    
+        #v_x = (log(idf) * log(tf_x.get(element, 0)  + 1)) if True else (idf * tf_x.get(element, 0) )
         v_x_2 += v_x * v_x
+        #v_y = (log(idf) * log(tf_x.get(element, 0)  + 1)) if True else (idf * tf_x.get(element, 0) )
         v_y = idf * tf_y.get(element, 0)
         #print("vy", v_y)
         v_y_2 += v_y * v_y
@@ -121,8 +129,8 @@ def calc_softTFIDF_for_pair(osm_name, yelp_name, corpus_list, threshold, seconda
     return score
 
 def calc_softTFIDF_for_pair_package(osm_name, yelp_name, corpus_list, threshold, secondary_func, document_frequency):
-    tokenized_osm_name = tokenize_on_space(osm_name)
-    tokenized_yelp_name = tokenize_on_space(yelp_name)
+    tokenized_osm_name = tokenize(osm_name)
+    tokenized_yelp_name = tokenize(yelp_name)
     soft_tfidf = py_stringmatching.SoftTfIdf(corpus_list, sim_func=secondary_func, threshold=threshold)
     package_score = soft_tfidf.get_raw_score(tokenized_osm_name, tokenized_yelp_name)
     return package_score
@@ -149,16 +157,16 @@ def TFIDF(df):
 
 
 def calc_tfidf_for_pair(osm_name, yelp_name, corpus_list, document_frequency):
-    tokenized_osm_name = tokenize_on_space(osm_name)
-    tokenized_yelp_name = tokenize_on_space(yelp_name)
+    tokenized_osm_name = tokenize(osm_name)
+    tokenized_yelp_name = tokenize(yelp_name)
     tf_x, tf_y = collections.Counter(tokenized_osm_name), collections.Counter(tokenized_yelp_name)
 
     # if the strings match exactly return 1.0
-    if utils.sim_check_for_exact_match(tokenized_osm_name, tokenized_yelp_name):
+    if sim_check_for_exact_match(tokenized_osm_name, tokenized_yelp_name):
         return 1.0
 
     # if one of the strings is empty return 0
-    if utils.sim_check_for_empty(tokenized_osm_name, tokenized_yelp_name):
+    if sim_check_for_empty(tokenized_osm_name, tokenized_yelp_name):
         return 0.0
 
     # find unique elements in the input lists and their document frequency 
@@ -197,8 +205,8 @@ def calc_tfidf_for_pair(osm_name, yelp_name, corpus_list, document_frequency):
                     
 
 def calc_TFIDF_for_pair_package(osm_name, yelp_name, corpus_list, document_frequency):
-    tokenized_osm_name = tokenize_on_space(osm_name)
-    tokenized_yelp_name = tokenize_on_space(yelp_name)
+    tokenized_osm_name = tokenize(osm_name)
+    tokenized_yelp_name = tokenize(yelp_name)
     tfidf = py_stringmatching.TfIdf(corpus_list, dampen=True)
     package_score = tfidf.get_sim_score(tokenized_osm_name, tokenized_yelp_name)
     print("result tfidf from package:")
@@ -215,15 +223,17 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                 df_scores = softTFIDF(df, secondary_func=sim_func, secondary_threshold = secondary_threshold)
                 #df_scores = TFIDF(df)
 
-                # print("=========================False positives:========================================")
-                # for index, pair in df_scores.iterrows():
-                #     if (pair['match'] is 0) and pair['score'] >= 0.1:
-                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                print("=========================False positives:========================================")
+                for index, pair in df_scores.iterrows():
+                    if (pair['match'] is 0) and pair['score'] >= primary_threshold:
+                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
-                # print("==========================Flase negatives:========================================")
-                # for index, pair in df_scores.iterrows():
-                #     if (pair['match'] is 1) and pair['score'] <= 0.1:
-                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                print("==========================Flase negatives:========================================")
+                for index, pair in df_scores.iterrows():
+                    if (pair['match'] is 1) and pair['score'] <= primary_threshold:
+                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
                 df_scores = classify_scores(df_scores, primary_threshold)
                 precision, recall, f1_score, matthew_correlation_coefficient = get_metrics(df_scores)
@@ -255,7 +265,7 @@ def main():
     df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')    
     df = pd.concat([df1, df2])
     df = drop_rows_with_label(df, 2)
-    tfidf_script(df, [jaro_winkler_similarity], [0.1],[0.9], 'f1_score')
+    tfidf_script(df, [jaro_winkler_similarity], [0.3],[0.85], 'f1_score')
     # df_with_scores = softTFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     # #df_with_scores = TFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     
@@ -273,7 +283,6 @@ def main():
     # print("recall: ", recall)
     # print("f1-score: ", f1_score)
     # print("matthew-corr-coeff: ", matthew_correlation_coefficient)
-
 
 if __name__ == "__main__":
     main()

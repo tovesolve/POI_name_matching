@@ -3,6 +3,8 @@ import pandas as pd
 from nltk.tokenize import word_tokenize, WhitespaceTokenizer
 from nltk.tokenize.api import StringTokenizer, TokenizerI
 import re
+from nltk.corpus import stopwords
+import unidecode
 
 
 pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
@@ -11,46 +13,89 @@ def tokenize_on_space(string):
     pattern = r"\S+"
     return re.findall(pattern, string)
         
+#def tokenize_name(name):
+#    return word_tokenize(name)
+
+#tokenize name on space, to lower, remove special characters
 def tokenize_name(name):
-    return word_tokenize(name)
-
-def tokenize_dataframe(df):
-    data_colnames = ['osm_token', 'yelp_token']
-    df_tokens = pd.DataFrame(columns=data_colnames)
+    tokenized = name.lower() #lower case
     
-    for index, pair in df.iterrows():
-        osm_wo_spec = remove_special_characters(pair['osm_name'])
-        yelp_wo_spec = remove_special_characters(pair['yelp_name'])
+    #tokenized = re.sub(r"[-._!\"`'#%&,:;<>=@{}~\$\(\)\*\+\/\\\?\[\]\^\|]+", '', tokenized) #tar bort alla dessa specialtecken
+    #tokenized = re.sub(r"[éèê]", 'e', tokenized) #vill ersätta varianter på tecken till orginaltecken.
 
-        osm_tokenized = tokenize_name(osm_wo_spec)
-        yelp_tokenized = tokenize_name(yelp_wo_spec)
+    tokenized = re.sub(r"[;]", ' ', tokenized)
+    tokenized = unidecode.unidecode(tokenized)
+    #tokenized.normalize("NFD").replace(r"/[\u0300-\u036f]/g", "")
+    
+    #ändra - till blank
+    
+    tokenized = re.sub(r"[^\sa-zA-Z0-9]", '', tokenized) #ta bort allt som inte är små, stora bokstäver eller siffror
+    
+    stop_words = stopwords.words('english')
+    filtered_stopwords = filter_stopwords(stop_words)
+    #print("stop words: ", filtered_stopwords)
+    
+    pattern = r"\S+" #splittar på mellanslag
+    tokens_list = re.findall(pattern, tokenized)
+    tokens_list = [w for w in tokens_list if not w.lower() in filtered_stopwords]
+    #re.sub
+    return tokens_list
 
-        osm_tokenized = tokens_to_lower(osm_tokenized)
-        yelp_tokenized = tokens_to_lower(yelp_tokenized)
+def filter_stopwords(stop_words):
+    filtered_stopwords = []
+    for w in stop_words:
+        word = re.sub(r"[']", '', w)
+        if len(word) <= 3:
+            filtered_stopwords.append(word)
+    return filtered_stopwords
 
-        df_tokens = df_tokens.append({'osm_token': osm_tokenized, 'yelp_token': yelp_tokenized}, ignore_index=True)
+def tokenize(name):
+    return tokenize_name(name)
 
-    df['osm_token'] = df_tokens['osm_token']
-    df['yelp_token'] = df_tokens['yelp_token']  
+#används inte
+# def tokenize_dataframe(df):
+#     data_colnames = ['osm_token', 'yelp_token']
+#     df_tokens = pd.DataFrame(columns=data_colnames)
+    
+#     for index, pair in df.iterrows():
+#         osm_wo_spec = remove_special_characters(pair['osm_name'])
+#         yelp_wo_spec = remove_special_characters(pair['yelp_name'])
 
-    return df
+#         osm_tokenized = tokenize_name(osm_wo_spec)
+#         yelp_tokenized = tokenize_name(yelp_wo_spec)
+
+#         osm_tokenized = tokens_to_lower(osm_tokenized)
+#         yelp_tokenized = tokens_to_lower(yelp_tokenized)
+
+#         df_tokens = df_tokens.append({'osm_token': osm_tokenized, 'yelp_token': yelp_tokenized}, ignore_index=True)
+
+#     df['osm_token'] = df_tokens['osm_token']
+#     df['yelp_token'] = df_tokens['yelp_token']  
+
+#     return df
 
 #tokens to lower case
 def tokens_to_lower(token_list):
     return [token.lower() for token in token_list]
 
-#define and remove special characters
-def remove_special_characters(name):
-    pattern = r'\s.'
-    
-    return pattern
+def token_to_lower(name):
+    return name.lower()
 
 
 def main():
-    df = pd.read_pickle('df_pairs_1645521936.8028078.pkl')
-    df = tokenize_dataframe(df)
+    #df = pd.read_pickle('df_pairs_1645521936.8028078.pkl')
+    #df = tokenize_dataframe(df)
     #df.to_pickle('./df_w_tokens' + str(datetime.datetime.now().strftime("%Y%m%d%H%M%S")) + '.pkl') # save dataframe
-    print(df)
+    #print(df)
+    
+    #stopword from nltk
+    #stopwords = {'them', 'about', 'hadn', 'mustn', 'such', 'can', 'isn', 'most', 'haven', 'once', 'more', "don't", 'how', 'during', 'having', 'a', 'if', 'i', 'own', 'which', 'again', 'further', 'after', 'wasn', 'his', 'don', 'my', 'an', 'while', "mightn't", 'down', 'y', 'in', "should've", 'between', 'above', "didn't", 'yours', 'she', 'her', 'your', 'too', "weren't", 'you', 'were', 'has', 'to', 'do', 'through', "it's", 'ours', 'hers', "hadn't", 'then', 'mightn', 'yourself', 'only', "wasn't", 'our', 'they', 'not', 'some', "shouldn't", 'who', 'against', 'over', 'no', "she's", 'am', 'it', 'of', 'so', 'ourselves', "needn't", 'same', 'does', 'ain', 'any', 'is', 'will', 'doing', 'until', 'under', 'there', "couldn't", 'theirs', 'hasn', 'but', "you'd", 'the', 'before', 'we', 't', 'being', "you're", 'by', 'here', 'm', 'its', 'needn', "won't", "you'll", 'that', 'just', "that'll", 'be', 'off', "isn't", 'whom', 'themselves', 'myself', 'what', 'him', 'than', "aren't", 'or', 'this', 'and', 'wouldn', 'now', 'weren', 's', 'me', 'been', "doesn't", 're', 'did', 've', 'below', 'yourselves', 'at', 'on', 'very', 'doesn', 'he', 'herself', 'from', 'himself', 'shan', 'few', 'all', 'ma', 'those', "wouldn't", 'their', "hasn't", "haven't", 'why', "shan't", 'these', 'o', 'couldn', 'itself', 'into', 'as', 'each', 'had', 'with', 'aren', 'for', 'both', 'should', "mustn't", 'd', 'won', 'out', 'where', "you've", 'up', 'shouldn', 'have', 'because', 'when', 'was', 'nor', 'are', 'll', 'didn', 'other'}
+    #filtrera på max 3 chars.
+    
+    #example_sent = "He'l\"l0 and hÄéj! is . & it's tov its both above"
+    print(tokenize(example_sent))
+    #tokenize_name("Hello", [token_to_lower])
+    
 
 if __name__ == "__main__":
     main()
