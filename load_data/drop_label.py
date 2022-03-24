@@ -40,6 +40,25 @@ def drop_rows_with_label(df, label_value):
 
     return df.drop(df[df['match'] == label_value].index)
 
+def drop_exact_rows(df):
+    """
+    Drops all rows in the dataframe with the label value
+
+    Parameters
+    ----------
+    df : dataframe
+        the pickled dataframe (.pkl-file) which label should be dropped
+    label_value : int
+        the value of the label to be dropped
+
+    Returns
+    -------
+    dataframe
+        an updated dataframe after dropping the rows
+    """
+
+    return df.drop(df[df['osm_name'] == df['yelp_name']].index)
+
 def main():
     # parsing input arguments from command line to variables
     parser = argparse.ArgumentParser()
@@ -51,8 +70,10 @@ def main():
     df = pd.read_pickle(args.df)
 
     # dropa all rows with the given label
-    df = drop_rows_with_label(df, int(args.label_value))
+    print(df.shape[0])
+    df = drop_exact_rows(df)
     print(df)
+    print(df.shape[0])
     # overwrites and saves dataframe
     #df.to_pickle(args.df)
 
