@@ -18,6 +18,11 @@ def tokenize_on_space(string):
 
 #tokenize name on space, to lower, remove special characters
 def tokenize_name(name):
+    #lägger till blank mellan liten och stor bokstav, tex "proOptical" -> "pro Optical"
+    #print(name)
+    #tokenized = re.sub(r'(?<![A-Z\W])(?=[A-Z])', ' ', name)
+    #print(tokenized)
+    #tokenized = tokenized.lower()
     tokenized = name.lower() #lower case
     
     #tokenized = re.sub(r"[-._!\"`'#%&,:;<>=@{}~\$\(\)\*\+\/\\\?\[\]\^\|]+", '', tokenized) #tar bort alla dessa specialtecken
@@ -92,10 +97,9 @@ def main():
     #stopwords = {'them', 'about', 'hadn', 'mustn', 'such', 'can', 'isn', 'most', 'haven', 'once', 'more', "don't", 'how', 'during', 'having', 'a', 'if', 'i', 'own', 'which', 'again', 'further', 'after', 'wasn', 'his', 'don', 'my', 'an', 'while', "mightn't", 'down', 'y', 'in', "should've", 'between', 'above', "didn't", 'yours', 'she', 'her', 'your', 'too', "weren't", 'you', 'were', 'has', 'to', 'do', 'through', "it's", 'ours', 'hers', "hadn't", 'then', 'mightn', 'yourself', 'only', "wasn't", 'our', 'they', 'not', 'some', "shouldn't", 'who', 'against', 'over', 'no', "she's", 'am', 'it', 'of', 'so', 'ourselves', "needn't", 'same', 'does', 'ain', 'any', 'is', 'will', 'doing', 'until', 'under', 'there', "couldn't", 'theirs', 'hasn', 'but', "you'd", 'the', 'before', 'we', 't', 'being', "you're", 'by', 'here', 'm', 'its', 'needn', "won't", "you'll", 'that', 'just', "that'll", 'be', 'off', "isn't", 'whom', 'themselves', 'myself', 'what', 'him', 'than', "aren't", 'or', 'this', 'and', 'wouldn', 'now', 'weren', 's', 'me', 'been', "doesn't", 're', 'did', 've', 'below', 'yourselves', 'at', 'on', 'very', 'doesn', 'he', 'herself', 'from', 'himself', 'shan', 'few', 'all', 'ma', 'those', "wouldn't", 'their', "hasn't", "haven't", 'why', "shan't", 'these', 'o', 'couldn', 'itself', 'into', 'as', 'each', 'had', 'with', 'aren', 'for', 'both', 'should', "mustn't", 'd', 'won', 'out', 'where', "you've", 'up', 'shouldn', 'have', 'because', 'when', 'was', 'nor', 'are', 'll', 'didn', 'other'}
     #filtrera på max 3 chars.
     
-    #example_sent = "He'l\"l0 and hÄéj! is . & it's tov its both above"
+    #example_sent = "ProOptical He'l\"l0 and hÄéj! is . & it's tov its both above ProOPtical"
     print(tokenize(example_sent))
     #tokenize_name("Hello", [token_to_lower])
-    
 
 if __name__ == "__main__":
     main()
