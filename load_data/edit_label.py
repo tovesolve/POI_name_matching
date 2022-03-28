@@ -2,6 +2,9 @@ import argparse
 import pandas as pd
 from sqlite3 import Timestamp
 import time
+import datetime
+
+from drop_label import drop_rows_with_label
 
 """
 A script used to a edit current label on an already labelled pair of POIs in a labelled dataframe from a pkl-file .
@@ -46,6 +49,66 @@ def edit_label(osm_name, yelp_name, new_value, df):
             df.at[index,'match']=new_value
             #print('updated', pair)
 
+def relabel(df):
+    print(df.shape[0])
+    for index, poi in df.iterrows(): #iterate through POIs in OSM dataset
+        #if poi['match'] == 0:
+        if 'Oakridge-41st' in poi['osm_name']:
+            print("0: ", poi['osm_name'], " , ", poi['yelp_name'])
+            df = df.drop(index)
+    #print(df.shape[0])
+        
+                #print("0: ", poi['osm_name'], " , ", poi['yelp_name']) #Print pair for user to consider)
+    #         #restrict only compare POIs if they are closely located
+    #         if (lat_yelp < lat_osm+distance and lat_yelp > lat_osm-distance) and (lon_yelp < lon_osm+distance and lon_yelp > lon_osm-distance):     
+    #             alreadyLabelled = False
+    #             #check if pair already exist in labelled data:
+    #             for i, labelled_poi in df_pairs.iterrows():
+    #                 if labelled_poi['osm_name'] == poi_osm['name'] and labelled_poi['yelp_name'] == poi_yelp['name']:
+    #                     alreadyLabelled = True
+    #                     print('already labelled: ', labelled_poi['osm_name'], poi_osm['name'], labelled_poi['yelp_name'], poi_yelp['name'])
+    #                     break
+                        
+    #             if not alreadyLabelled:        
+    #                 poi_dist = distance_meters(lat_osm, lon_osm, lat_yelp, lon_yelp) #calculate distance between POIs  
+
+    #                 print(poi_osm['name'], " , ", poi_yelp['name'], ' distance between: ', poi_dist) #Print pair for user to consider
+    #                 if poi_osm['name'].lower() == poi_yelp['name'].lower(): #if names are an exact match
+    #                     #print("exact")
+    #                     print("1")
+    #                     df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 1}, ignore_index=True)
+    #                 elif levenshtein_similarity(poi_osm['name'].lower(), poi_yelp['name'].lower()) < 0.2:
+    #                     df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 0}, ignore_index=True)
+    #                     print("0")
+    #                     #print("not similar ") #, poi_osm['name'], " , ", poi_yelp['name'], ' distance between: ', poi_dist)
+    #                 else:
+    #                     #print(poi_osm['name'], " , ", poi_yelp['name'], ' distance between: ', poi_dist)
+    #                     #print("")
+    #                     #num = 0
+    #                     while True:
+    #                         str_num = input() #Take input from user
+    #                         try:
+    #                             num = int(str_num)
+    #                             if num not in range(0,4): #restrict input to 0/1
+    #                                 print("Only numbers 0, 1, 2 and 3 valid")
+    #                             else:
+    #                                 break
+    #                         except ValueError:
+    #                             print("not int, try again")
+
+    #                     #Add pair to DataFrame:
+    #                     if num == 1:
+    #                         df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 1}, ignore_index=True)
+    #                     elif num == 0:
+    #                         df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 0}, ignore_index=True)
+    #                     elif num == 2:
+    #                         df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 2}, ignore_index=True)
+    #                     elif num == 3:
+    #                         df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 3}, ignore_index=True)
+
+    #df.to_pickle('temp.pkl') # save dataframe to pickle
+    return df
+
 def main():
     # parsing input arguments from command line to variables
     parser = argparse.ArgumentParser()
@@ -57,6 +120,7 @@ def main():
 
     # reads the dataframe from the pickled file
     df = pd.read_pickle(args.df)
+    #df = relabel(df)
 
     # reads the argument for the new label and edits the chosen label in the dataframe
     if int(args.new_value) == 1:
@@ -69,7 +133,7 @@ def main():
         edit_label(args.osm_name, args.yelp_name, 3, df)
 
     #print(df)
-    df.to_pickle(args.df) # overwrites and saves dataframe
+    #df.to_pickle(args.df) # overwrites and saves dataframe
 
 if __name__ == "__main__":
     main()

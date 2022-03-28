@@ -6,9 +6,9 @@ Functions
 ---------
     * count_classes
 
-Run script:  python3 handle_df <args>
+Run script:  python3 handle_df.py <args>
     args are defined below
-Basic run:   python3 handle_df --df <file_name>
+Basic run:   python3 handle_df.py --df <file_name>
 """
 
 import argparse
@@ -71,6 +71,7 @@ def count_classes(df):
         ind = int(pair['match'])
         if  ind == 0:
             count_0 +=1
+            #print("0: ", pair['osm_name'], " and ", pair['yelp_name'], pair['distance'])
             class0_pairs.append((pair['osm_name'], pair['yelp_name'], pair['distance']))
         elif ind == 1:
             count_1 +=1
@@ -79,6 +80,7 @@ def count_classes(df):
                 max_dist = float(pair['distance'])
             sum_dist += float(pair['distance'])
         elif ind == 2:
+            #print("2: ", pair['osm_name'], " and ", pair['yelp_name'], pair['distance'])
             count_2 += 1
             class2_pairs.append((pair['osm_name'], pair['yelp_name'], pair['distance']))
         elif ind == 3:
