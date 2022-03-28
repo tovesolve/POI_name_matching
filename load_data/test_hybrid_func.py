@@ -1,6 +1,6 @@
 from threading import local
 from traceback import print_tb
-from drop_label import drop_rows_with_label
+from drop_label import drop_rows_with_label, drop_exact_rows
 from baseline import calculate_similarity_score
 from drop_label import *
 from token_based_func import *
@@ -236,6 +236,14 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
                         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
+                print("==========================True positives:========================================")
+                for index, pair in df_scores.iterrows():
+                    if (pair['match'] == 1) and pair['score'] >= primary_threshold:
+                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+
+
+
                 df_scores = classify_scores(df_scores, primary_threshold)
                 precision, recall, f1_score, matthew_correlation_coefficient = get_metrics(df_scores)
                 if metric == "precision":
@@ -246,7 +254,7 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                     scores.append(f1_score)
                 elif metric == "matthew":
                     scores.append(matthew_correlation_coefficient)   
-                #print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score)
+                print("primary_threshold: ", primary_threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
         dict[sim_func] = scores
     
     print(dict)

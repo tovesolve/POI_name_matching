@@ -1,7 +1,9 @@
-from sklearn.metrics import precision_score, recall_score, f1_score, matthews_corrcoef, confusion_matrix, ConfusionMatrixDisplay, plot_confusion_matrix
+import imp
+from sklearn.metrics import jaccard_score, precision_score, recall_score, f1_score, matthews_corrcoef, confusion_matrix, ConfusionMatrixDisplay, plot_confusion_matrix
+from drop_label import drop_rows_with_label
+import datetime
 import numpy as np
 import pandas as pd
-from drop_label import drop_rows_with_label
 import matplotlib.pyplot as plt
 import seaborn as sns
  
@@ -131,9 +133,8 @@ def plot_evaluation_graph(metrics_object_dict, threshold_list, sim_func_list, me
     plt.show()
     
     # saves the plot to a png file
-    fig, _ = plt.subplots()
-    fig.savefig("eval.png")
-   
+    img_name = str(metric) + '_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.png' #TODO save to better file name
+    plt.savefig(img_name)
     
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
@@ -142,6 +143,7 @@ def main():
     #df = pd.read_pickle('df_pairs_boston2022-02-28.110406.pkl')
     #f1_comparision_graph(metrics_object_list={'levenstein':[0.31,20,30], 'damarau': [10, 10, 10], 'jaro': [5,5,5]}, threshold_list= [1,2,3], sim_func_list=['levenstein', 'damarau', 'jaro'])
     #f1_comparision_graph(metrics_object_list={'levenstein':[10,20,30], 'damarau': [10, 10, 10]}, threshold_list= [1,2,3], sim_func_list=['levenstein', 'damarau'])
+    plot_evaluation_graph({'leven': [0, 0.5, 0.5]}, [0, 0.5, 1], ['leven'], 'f1_score')
 
 if __name__ == "__main__":
     main()

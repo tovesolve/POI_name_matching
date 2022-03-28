@@ -98,7 +98,7 @@ def close_pairs(df_osm, df_yelp, distance):
                         elif num == 3:
                             df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 3}, ignore_index=True)
 
-    df_pairs.to_pickle('./v0_df_pairs_vancouver_all' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    #df_pairs.to_pickle('./v0_df_pairs_vancouver_all' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
     return df_pairs
 
 
@@ -262,11 +262,30 @@ def main_all_vancouver():
     print("Dataframe pairs:")
     print(df)
     print('Number of rows in labelled df: ', df.shape[0])
+    
+def main_raleigh():
+    '''
+    Main method for Raleigh area
+    '''
+    df_osm = pd.read_pickle('df_osm_nc2022-03-25.150102.pkl')   #read dataframe osm data
+    df_yelp = pd.read_pickle('df_gov_nc2022-03-25.151855.pkl') #read dataframe yelp data
+
+    df_osm = restrict_dataset(df_osm, 35.859603, 35.655800, -78.902602, -78.701696) 
+    df_yelp = restrict_dataset(df_yelp, 35.859603, 35.655800, -78.902602, -78.701696)
+    print('Number of rows in labelled df_osm: ', df_osm.shape[0])
+    print('Number of rows in labelled df_yelp: ', df_yelp.shape[0])
+
+    df = close_pairs(df_osm, df_yelp, distance=0.0002)  #0.001=111m
+    print("Dataframe pairs:")
+    print(df)
+    print('Number of rows in labelled df: ', df.shape[0])
 
 def main():
     #main_florida()
     #main_boston()
+    main_vancouver()
     main_all_vancouver()
+    main_raleigh()
 
 if __name__ == "__main__":
     main()

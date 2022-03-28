@@ -1,5 +1,5 @@
 from character_based_func import *
-from drop_label import drop_rows_with_label
+from drop_label import drop_rows_with_label, drop_exact_rows
 from token_based_func import *
 from token_based_func import jaccard_similarity, cosine_similarity
 from evaluation_metrics import *
@@ -64,7 +64,7 @@ def baseline_script(df, sim_funcs, thresholds, metric):
                 scores.append(matthew_correlation_coefficient)   
             #print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score)
         dict[sim_func] = scores
-    #plot_evaluation_graph(dict, thresholds, sim_funcs, metric)
+    plot_evaluation_graph(dict, thresholds, sim_funcs, metric)
 
 def calculate_similarity_score(df, sim_func):
     """
@@ -111,6 +111,7 @@ def main():
     
     # drops alla rows in the dataframe with label 2 (uncertain data points), to be excluded from the evaluation script.
     df = drop_rows_with_label(df, 2)
+    #df = drop_exact_rows(df)
     
     #iterates through the input similarity function list and adds as functions.
     sim_func_list = []
