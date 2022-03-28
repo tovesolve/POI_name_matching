@@ -1,6 +1,6 @@
 from threading import local
 from traceback import print_tb
-from drop_label import drop_rows_with_label
+from drop_label import drop_rows_with_label, drop_exact_rows
 from baseline import calculate_similarity_score
 from token_based_func import *
 from evaluation_metrics import *
@@ -235,6 +235,14 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
                         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
+                print("==========================True positives:========================================")
+                for index, pair in df_scores.iterrows():
+                    if (pair['match'] == 1) and pair['score'] >= primary_threshold:
+                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+
+
+
                 df_scores = classify_scores(df_scores, primary_threshold)
                 precision, recall, f1_score, matthew_correlation_coefficient = get_metrics(df_scores)
                 if metric == "precision":
@@ -245,7 +253,7 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                     scores.append(f1_score)
                 elif metric == "matthew":
                     scores.append(matthew_correlation_coefficient)   
-                #print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score)
+                print("primary_threshold: ", primary_threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
         dict[sim_func] = scores
     
     print(dict)
@@ -262,9 +270,12 @@ def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
     df1 = pd.read_pickle('v0_df_pairs_florida2022-02-28.094015.pkl')
-    df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')    
-    df = pd.concat([df1, df2])
+    df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')
+    df3 = pd.read_pickle('df_pairs_nc2022-03-25.152112.pkl')    
+    df4 = pd.read_pickle('v0_df_pairs_vancouver2022-03-25.153749.pkl')
+    df = pd.concat([df1, df2, df3, df4])
     df = drop_rows_with_label(df, 2)
+    df = drop_exact_rows(df)
     tfidf_script(df, [jaro_winkler_similarity], [0.3],[0.85], 'f1_score')
     # df_with_scores = softTFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     # #df_with_scores = TFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
