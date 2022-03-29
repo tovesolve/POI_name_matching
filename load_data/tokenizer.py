@@ -5,6 +5,10 @@ from nltk.tokenize.api import StringTokenizer, TokenizerI
 import re
 from nltk.corpus import stopwords
 import unidecode
+from bpemb import BPEmb
+from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine_similarity
+import numpy as np
+#import OpenTextbot.src.Algebra as Algebra 
 
 
 pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
@@ -49,7 +53,23 @@ def filter_stopwords(stop_words):
             filtered_stopwords.append(word)
     return filtered_stopwords
 
+def sentencePiece_tokenization(name):
+    tokenized = tokenize_name(name)
+    #print(tokenized)
+    
+    bpemb_en = BPEmb(lang="en", dim=300, vs=50000)
+    #s1 = "New York" #"Boston Common Coffee Co."
+    all_tokens = []
+    for t in tokenized:
+        tokens = bpemb_en.encode(t)
+        for to in tokens:
+            #print(to)
+            all_tokens.append(to)
+    #print(all_tokens)
+    return all_tokens
+
 def tokenize(name):
+    #return sentencePiece_tokenization(name)
     return tokenize_name(name)
 
 #används inte
