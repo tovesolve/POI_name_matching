@@ -90,7 +90,7 @@ def calc_softTFIDF_for_pair(osm_name, yelp_name, corpus_list, threshold, seconda
     first_string_pos = 0
     second_string_pos = 1
     sim_score_pos = 2
-
+    
     result, v_x_2, v_y_2 = 0.0, 0.0, 0.0
     # soft-tfidf calculation
     for element in local_df.keys():
@@ -128,6 +128,7 @@ def calc_softTFIDF_for_pair(osm_name, yelp_name, corpus_list, threshold, seconda
     score = result if (v_x_2 == 0 or v_y_2 == 0)  else result / (sqrt(v_x_2) * sqrt(v_y_2))
     #print(score)
     return score
+
 
 def calc_softTFIDF_for_pair_package(osm_name, yelp_name, corpus_list, threshold, secondary_func, document_frequency):
     tokenized_osm_name = tokenize(osm_name)
@@ -236,11 +237,11 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
                         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
-                print("==========================True positives:========================================")
-                for index, pair in df_scores.iterrows():
-                    if (pair['match'] == 1) and pair['score'] >= primary_threshold:
-                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
-                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                # print("==========================True positives:========================================")
+                # for index, pair in df_scores.iterrows():
+                #     if (pair['match'] == 1) and pair['score'] >= primary_threshold:
+                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
 
 
