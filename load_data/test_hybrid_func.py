@@ -1,3 +1,4 @@
+from heapq import heappush
 from threading import local
 from traceback import print_tb
 from drop_label import drop_rows_with_label, drop_exact_rows
@@ -11,6 +12,7 @@ import pandas as pd
 from math import log
 from math import sqrt
 import collections
+import heapq
 from character_based_func import jaro_winkler_similarity, levenshtein_similarity
 
 #from py_stringmatching import utils
@@ -39,6 +41,51 @@ def softTFIDF(df, secondary_func=levenshtein_similarity, secondary_threshold = 0
         df_scores = df_scores.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': score}, ignore_index=True)
 
     return df_scores
+
+
+
+
+def softTFIDF_most_similar_collection(df, secondary_func=levenshtein_similarity, secondary_threshold = 0.5):
+    data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
+    df_scores = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
+    
+    for index, pair in df.iterrows():
+        data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match']
+        df_restricted = pd.DataFrame(columns=data_colnames) #create dataframe with 50 most similar names
+        original_osm, original_yelp = pair['osm_name'], pair['yelp_name']
+        similar_datapoints = []
+        for i, p in df.iterrows():
+            sim_score1 = jaro_winkler_similarity(original_osm, p['osm_name'])
+            sim_score2 = jaro_winkler_similarity(original_yelp, p['yelp_name'])
+            heappush(similar_datapoints, ((sim_score1 + sim_score2), (p['osm_name'], p['yelp_name'])))
+        
+        #print("============FOR ORGINAL: ", original_osm, " and ", original_yelp, " =============================")
+        most_similar = heapq.nlargest(10,similar_datapoints)
+        #print(most_similar)
+
+        for i, p in df.iterrows():
+            if len([item for item in most_similar if item[1][0] == p['osm_name'] and item[1][1] == p['yelp_name']]) == 1:
+                df_restricted = df_restricted.append({'osm_name': p['osm_name'], 'yelp_name': p['yelp_name'], 'osm_latitude': p['osm_latitude'], 'osm_longitude': p['osm_longitude'], 'yelp_latitude': p['yelp_latitude'], 'yelp_longitude': p['yelp_longitude'], 'distance': p['distance'], 'match': p['match']}, ignore_index=True)
+        #print(df_restricted)
+      
+        corpus_list = get_corpus_list_for_pystringmatching(df_restricted) #create corpus from dataframe
+        #print("corpus list for ", pair['osm_name'], " and ", pair['yelp_name'], ": ", corpus_list)
+
+        #manual softTFIDF:
+        document_frequency = {}
+        if corpus_list != None:
+            for document in corpus_list:
+                for element in set(document):
+                    document_frequency[element] = (document_frequency.get(element, 0) + 1)
+        #print("doc freq:", document_frequency)
+
+        score = calc_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, secondary_threshold, secondary_func, document_frequency)
+        #score = calc_softTFIDF_for_pair("Park Avenue Pizza", "Park Ave Pizza", corpus_list, secondary_threshold, secondary_func, document_frequency)
+        
+        df_scores = df_scores.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': score}, ignore_index=True)
+    return df_scores
+
+
 
 def sim_check_for_empty(*args):
     if len(args[0]) == 0 or len(args[1]) == 0:
@@ -220,8 +267,9 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
         scores = []           
         for primary_threshold in primary_thresholds:
             for secondary_threshold in secondary_thresholds:
-                df_scores = softTFIDF(df, secondary_func=sim_func, secondary_threshold = secondary_threshold)
+                #df_scores = softTFIDF(df, secondary_func=sim_func, secondary_threshold = secondary_threshold)
                 #df_scores = TFIDF(df)
+                df_scores = softTFIDF_most_similar_collection(df, secondary_func=sim_func, secondary_threshold = secondary_threshold)
 
                 print("=========================False positives:========================================")
                 for index, pair in df_scores.iterrows():
