@@ -49,6 +49,12 @@ def filter_stopwords(stop_words):
             filtered_stopwords.append(word)
     return filtered_stopwords
 
+def concat_token_list(token_list):
+    word = ""
+    for t in token_list:
+        word+= t + " "
+    return word
+
 def tokenize(name):
     return tokenize_name(name)
 
