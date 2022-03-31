@@ -43,7 +43,10 @@ def tokenize_name(name):
     
     # filter token_list on stopwords
     tokens_list = [w for w in tokens_list if not w.lower() in filtered_stopwords]
+    
+    #stem tokens to their basic form
     stemmed_tokens_list = stem(tokens_list)
+    
     return stemmed_tokens_list
 
 def filter_stopwords(stop_words):
