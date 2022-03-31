@@ -279,7 +279,7 @@ def main():
     df = drop_rows_with_label(df, 3)
     df = drop_rows_with_label(df, 2)
     #df = drop_exact_rows(df)
-    tfidf_script(df, [jaro_winkler_similarity], [0.3],[0.85], 'f1_score')
+    tfidf_script(df, [jaro_winkler_similarity], [0.42],[0.85], 'f1_score')
     # df_with_scores = softTFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     # #df_with_scores = TFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     
