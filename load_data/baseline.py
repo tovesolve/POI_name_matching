@@ -12,13 +12,11 @@ import argparse as a
 A baseline script to evaluate pure similarity functions. The script reads a dataframe, a list of similarity functions and a list of threshold values. 
 The similarity functions are run seperately on the dataframe for the different thresholds. A bar-chart with evalaution metrics is generated.
 
-Run script using: 'python3 -W ignore baseline.py --df {pickled dataframe file} --sim-funcs {similarity functions} --thresholds {float values}'
-Example: 'python3 -W ignore baseline.py --df v0_df_pairs_florida2022-02-28.094015.pkl --sim-funcs cosine_similarity, levenshtein_similarity --thresholds 0.5 0.7 1.0'
+Run script using: 'python -W ignore baseline.py --sim_funcs {similarity functions} --thresholds {float values} --metric {string metric}'
+Example: 'python -W ignore baseline.py --sim_funcs cosine_similarity, levenshtein_similarity --thresholds 0.5 0.7 1.0 --metric f1_score'
 
 Attributes
 ----------
-df : dataframe
-    the pickled dataframe (.pkl-file) that contains the pair of POIs that should be evaluated
 sim_funcs : list
     a list of similarity functions to be used in the evaluation
 thresholds : list
@@ -48,9 +46,10 @@ def baseline_script(df, sim_funcs, thresholds, metric):
         the metric to be used in the generated plot
     """
     dict = {}
-    for sim_func in sim_funcs:
-        scores = []            
-        for threshold in thresholds:
+    
+    for threshold in thresholds:
+        scores = []     
+        for sim_func in sim_funcs:       
             df_scores = calculate_similarity_score(df, sim_func)
             df_scores = classify_scores(df_scores, threshold)
             precision, recall, f1_score, matthew_correlation_coefficient = get_metrics(df_scores)
@@ -63,8 +62,9 @@ def baseline_script(df, sim_funcs, thresholds, metric):
             elif metric == "matthew":
                 scores.append(matthew_correlation_coefficient)   
             #print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score)
-        dict[sim_func] = scores
-    plot_evaluation_graph(dict, thresholds, sim_funcs, metric)
+        
+        dict[threshold] = scores
+    plot_evaluation_graph_sim_funcs(dict, thresholds, sim_funcs, metric)
 
 def calculate_similarity_score(df, sim_func):
     """
@@ -92,39 +92,41 @@ def calculate_similarity_score(df, sim_func):
             df_scores = df_scores.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': score}, ignore_index=True)
     return df_scores
 
+def load_df():
+    df1 = pd.read_pickle('v0_df_pairs_florida2022-02-28.094015.pkl')
+    df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')  
+    df3 = pd.read_pickle('v0_df_pairs_vancouver_all2022-03-28.115404.pkl')
+    df4 = pd.read_pickle('v0_df_pairs_vancouver_schools_libraries_community2022-03-25.153749.pkl') 
+    df5 = pd.read_pickle('v0_df_pairs_nc2022-03-25.152112.pkl') 
+    df = pd.concat([df1, df2, df3, df4, df5])
+    df = drop_rows_with_label(df, 3)
+    df = drop_rows_with_label(df, 2)
+    #df = drop_exact_rows(df)
+    return df
+
 def main():
     
     # parsing input arguments from command line to variables
     parser = a.ArgumentParser()
-    parser.add_argument('--dfs', dest = 'dfs', nargs="*", default=[])
     parser.add_argument('--sim_funcs', dest = 'sim_funcs', nargs="*", default=[])
     parser.add_argument('--thresholds', dest = 'thresholds', nargs="*", type=float, default=[])
     parser.add_argument('--metric', dest = 'metric')
     args = parser.parse_args()
-    
-    #iterates through the input dataframes and concatinates into one dataframe
-    dfs_list = []
-    for df in args.dfs:
-        df = pd.read_pickle(df)
-        dfs_list.append(df)
-    df = pd.concat(dfs_list)
-    
-    # drops alla rows in the dataframe with label 2 (uncertain data points), to be excluded from the evaluation script.
-    df = drop_rows_with_label(df, 2)
-    #df = drop_exact_rows(df)
+
+    df = load_df()
     
     #iterates through the input similarity function list and adds as functions.
     sim_func_list = []
     for sim_func in args.sim_funcs:
-        if sim_func == 'cosine_similarity':
+        if sim_func == 'cosine':
             sim_func_list.append(cosine_similarity)
-        elif sim_func == 'jaccard_similarity':
+        elif sim_func == 'jaccard':
             sim_func_list.append(jaccard_similarity)
         elif sim_func == 'jaro':
             sim_func_list.append(jaro_similarity)
         elif sim_func == 'jaro_winkler':
             sim_func_list.append(jaro_winkler_similarity)
-        elif sim_func == 'levenshtein_similarity':
+        elif sim_func == 'levenshtein':
             sim_func_list.append(levenshtein_similarity)
 
     #runs the baseline script with input arguments.
