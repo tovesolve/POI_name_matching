@@ -236,11 +236,11 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
                         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
-                print("==========================True positives:========================================")
-                for index, pair in df_scores.iterrows():
-                    if (pair['match'] == 1) and pair['score'] >= primary_threshold:
-                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
-                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                # print("==========================True positives:========================================")
+                # for index, pair in df_scores.iterrows():
+                #     if (pair['match'] == 1) and pair['score'] >= primary_threshold:
+                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
 
 
@@ -257,24 +257,24 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                 print("primary_threshold: ", primary_threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
         dict[sim_func] = scores
     
-    print(dict)
+    #print(dict)
     threshold_tuples = [] 
     for i in range(len(primary_thresholds)):
         for j in range(len(secondary_thresholds)):
             threshold_tuples.append((primary_thresholds[i], secondary_thresholds[j]))
-    print(threshold_tuples)
+    #print(threshold_tuples)
 
-    plot_evaluation_graph(dict, threshold_tuples, sim_funcs, metric)
+    #plot_evaluation_graph(dict, threshold_tuples, sim_funcs, metric)
 
 
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
-    df1 = pd.read_pickle('v0_df_pairs_florida2022-02-28.094015.pkl')
+    df1 = pd.read_pickle('v0.5_df_pairs_florida2022-02-28.094015.pkl')
     df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')  
     df3 = pd.read_pickle('v0_df_pairs_vancouver_all2022-03-28.115404.pkl')
     df4 = pd.read_pickle('v0_df_pairs_vancouver_schools_libraries_community2022-03-25.153749.pkl') 
-    df5 = pd.read_pickle('v0_df_pairs_nc2022-03-25.152112.pkl') 
+    df5 = pd.read_pickle('v0.5_df_pairs_nc2022-03-25.152112.pkl') 
     df = pd.concat([df1, df2, df3, df4, df5])
     df = drop_rows_with_label(df, 3)
     df = drop_rows_with_label(df, 2)

@@ -61,7 +61,29 @@ def baseline_script(df, sim_funcs, thresholds, metric):
                 scores.append(f1_score)
             elif metric == "matthew":
                 scores.append(matthew_correlation_coefficient)   
-            #print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score)
+            #print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
+        
+            # print("=========================False positives:========================================")
+            # for index, pair in df_scores.iterrows():
+            #     if (pair['match'] is 0) and pair['score'] >= threshold:
+            #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'], pair['distance'])
+            #         #print("tokenized to: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['osm_name']))), " and: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['yelp_name']))))
+
+            # print("==========================False negatives:========================================")
+            # for index, pair in df_scores.iterrows():
+            #     if (pair['match'] is 1) and pair['score'] <= threshold:
+            #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+            #         #print("tokenized to: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['osm_name']))), " and: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['yelp_name']))))    
+            
+            # print("==========================True positives:========================================")
+            # for index, pair in df_scores.iterrows():
+            #     if (pair['match'] == 1) and pair['score'] >= threshold:
+            #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+            #         #print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+
+                  
+        
+        
         
         dict[threshold] = scores
     plot_evaluation_graph_sim_funcs(dict, thresholds, sim_funcs, metric)
@@ -93,11 +115,11 @@ def calculate_similarity_score(df, sim_func):
     return df_scores
 
 def load_df():
-    df1 = pd.read_pickle('v0_df_pairs_florida2022-02-28.094015.pkl')
+    df1 = pd.read_pickle('v0.5_df_pairs_florida2022-02-28.094015.pkl')
     df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')  
     df3 = pd.read_pickle('v0_df_pairs_vancouver_all2022-03-28.115404.pkl')
     df4 = pd.read_pickle('v0_df_pairs_vancouver_schools_libraries_community2022-03-25.153749.pkl') 
-    df5 = pd.read_pickle('v0_df_pairs_nc2022-03-25.152112.pkl') 
+    df5 = pd.read_pickle('v0.5_df_pairs_nc2022-03-25.152112.pkl') 
     df = pd.concat([df1, df2, df3, df4, df5])
     df = drop_rows_with_label(df, 3)
     df = drop_rows_with_label(df, 2)

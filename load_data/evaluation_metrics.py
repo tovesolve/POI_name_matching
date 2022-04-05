@@ -116,7 +116,7 @@ def plot_evaluation_graph_sim_funcs(metrics_object_dict, threshold_list, sim_fun
     nbr_of_sim_funcs = len(sim_func_list)
     X_axis = np.arange(len(sim_func_list))
 
-    threshold_width = 0.02
+    threshold_width = 0.01
     sim_func_width = threshold_width*len(threshold_list)
     sim_func_middle_pos = (X_axis+1)/(nbr_of_sim_funcs+1)
     start_pos = sim_func_middle_pos - sim_func_width/2 + threshold_width/2
@@ -137,7 +137,7 @@ def plot_evaluation_graph_sim_funcs(metrics_object_dict, threshold_list, sim_fun
             plt.text(start[j]-0.008, scores[j]+0.01, str(round(scores[j],3)), fontsize=6)
         start = start + threshold_width
         i += 1
-
+        
     plt.xticks(ticks, func_name_list)
     plt.xlabel("Similarity Function")
     plt.ylabel(to_string(metric))
@@ -225,7 +225,12 @@ def get_colors():
                   [0.93, 0.79, 0.0, 0.7],
                   [0.44, 0.58, 0.86, 0.7],
                   [0.93, 0.46, 0.13, 0.7],
-                  [0.37, 0.18, 0.47, 0.7]]
+                  [0.37, 0.18, 0.47, 0.7],
+                  [0.21, 0.86, 0.79, 0.7],
+                  [0.33, 0.10, 0.55, 0.7],
+                  [0.72, 0.07, 0.14, 0.7],
+                  [0.8, 0.41, 0.54, 0.7],
+                  [0.23, 0.29, 0.56, 0.7]]
     return color_list
     
 def main():
