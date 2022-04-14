@@ -270,7 +270,6 @@ def tfidf_script(df, sim_funcs, primary_thresholds, char_thresholds, semantic_th
                         count_fn += 1
                 print("count False negatives: ", count_fn)
 
-
                 # print("==========================True positives:========================================")
                 # for index, pair in df_scores.iterrows():
                 #     if (pair['match'] == 1) and pair['score'] >= primary_threshold:
@@ -292,7 +291,7 @@ def tfidf_script(df, sim_funcs, primary_thresholds, char_thresholds, semantic_th
                 print("primary_threshold: ", primary_threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
         dict[sim_func] = scores
     
-    print(dict)
+    #print(dict)
     threshold_tuples = [] 
     for i in range(len(primary_thresholds)):
         for j in range(len(char_thresholds)):
@@ -305,11 +304,11 @@ def tfidf_script(df, sim_funcs, primary_thresholds, char_thresholds, semantic_th
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
-    df1 = pd.read_pickle('v0_df_pairs_florida2022-02-28.094015.pkl')
+    df1 = pd.read_pickle('v0.5_df_pairs_florida2022-02-28.094015.pkl')
     df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')  
     df3 = pd.read_pickle('v0_df_pairs_vancouver_all2022-03-28.115404.pkl')
     df4 = pd.read_pickle('v0_df_pairs_vancouver_schools_libraries_community2022-03-25.153749.pkl') 
-    df5 = pd.read_pickle('v0_df_pairs_nc2022-03-25.152112.pkl') 
+    df5 = pd.read_pickle('v0.5_df_pairs_nc2022-03-25.152112.pkl') 
     df = pd.concat([df1, df2, df3, df4, df5])
     df = drop_rows_with_label(df, 3)
     df = drop_rows_with_label(df, 2)
