@@ -7,6 +7,8 @@ from token_based_func import *
 from evaluation_metrics import *
 from word_embeddings import *
 from word_embeddings_cosine import *
+from bpemb import BPEmb as BPEmbedding
+from sentence_transformers import SentenceTransformer
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -38,7 +40,6 @@ def softTFIDF(df, model, char_func=levenshtein_similarity, semantic_threshold = 
     for index, pair in df.iterrows():
         score = calc_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, char_threshold, char_func, semantic_threshold, model, document_frequency, tokenizer_BERT)
         #score = calc_softTFIDF_for_pair("Park Avenue Pizza", "Park Ave Pizza", corpus_list, secondary_threshold, secondary_func, document_frequency)
-        
         df_scores = df_scores.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': score}, ignore_index=True)
 
     return df_scores
@@ -86,16 +87,17 @@ def calc_softTFIDF_for_pair(osm_name, yelp_name, corpus_list, char_threshold, ch
             #print("char score for ", term_x, " and ", term_y, ": ", char_score)
             
             #semantic similarity with sBERT    
-            #embedding_x = sBERT(term_x, model)
-            #embedding_y = sBERT(term_y, model)
-            #embedding_x = BPEmb_embedding(term_x, model)
-            #embedding_y = BPEmb_embedding(term_y, model)
+            #embedding_x = get_embedding_sBERT(term_x, model)
+            #embedding_y = get_embedding_sBERT(term_y, model)
+            embedding_x = get_embedding_BPEmb(term_x, model) #BPEmb_embedding(term_x, model)
+            embedding_y = get_embedding_BPEmb(term_y, model) # BPEmb_embedding(term_y, model)
             #embedding_x = glove_embedding(term_x, model)
             #embedding_y = glove_embedding(term_y, model)
-            embedding_x = BERT(term_x, model, tokenizer_model)
-            embedding_y = BERT(term_y, model, tokenizer_model)
+            #embedding_x = get_embedding_BERT(term_x, model, tokenizer_model).tolist()
+            #embedding_y = get_embedding_BERT(term_y, model, tokenizer_model).tolist()
+            #print("embeddings: ", embedding_x)
             semantic_score = sklearn_cosine_similarity(embedding_x, embedding_y)[0][0]
-            #print("semantic score for ", term_x, " and ", term_y, ": ", semantic_score)
+            #print("semantic score for BERT", term_x, " and ", term_y, ": ", semantic_score)
             
             if (char_score >= char_threshold or semantic_score >= semantic_threshold):
                 score = max(char_score, semantic_score)
@@ -147,7 +149,7 @@ def calc_softTFIDF_for_pair(osm_name, yelp_name, corpus_list, char_threshold, ch
         #print("vy2", v_y_2)
     #print("result soft-tfidf for ", osm_name, " and ", yelp_name, ": ")
     score = result if (v_x_2 == 0 or v_y_2 == 0)  else result / (sqrt(v_x_2) * sqrt(v_y_2))
-    #print(score)
+    #print("score: ", score)
     return score
 
 # def calc_softTFIDF_for_pair_package(osm_name, yelp_name, corpus_list, threshold, char_func, document_frequency):
@@ -240,34 +242,38 @@ def tfidf_script(df, sim_funcs, primary_thresholds, char_thresholds, semantic_th
     dict = {}
     
     #model_sBERT = SentenceTransformer("all-mpnet-base-v2")
-    #model_BPEmb = BPEmb(lang="en", dim=300, vs=50000) 
+    model_BPEmb = BPEmbedding(lang="en", dim=300, vs=50000) 
     #model_glove = KeyedVectors.load('vectors.kv')
-    model_BERT = BertModel.from_pretrained("bert-base-uncased")
+    #model_BERT = BertModel.from_pretrained("bert-base-uncased")
 
     for sim_func in sim_funcs:
         scores = []           
         for primary_threshold in primary_thresholds:
             for char_threshold in char_thresholds:
-                df_scores = softTFIDF(df, model_BERT, char_func=sim_func, semantic_threshold = semantic_threshold, char_threshold = char_threshold)
+                df_scores = softTFIDF(df, model_BPEmb, char_func=sim_func, semantic_threshold = semantic_threshold, char_threshold = char_threshold)
                 #df_scores = TFIDF(df)
 
+                data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
+                df_fp_fn = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
                 print("=========================False positives:========================================")
                 count_fp = 0
                 for index, pair in df_scores.iterrows():
-                    if (pair['match'] is 0) and pair['score'] >= primary_threshold:
+                    if (pair['match'] == 0) and pair['score'] >= primary_threshold:
                         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
                         #print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
                         count_fp += 1
+                        df_fp_fn = df_fp_fn.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': pair['score']}, ignore_index=True)
                 print("count False positives: ", count_fp)
                         
 
                 print("==========================Flase negatives:========================================")
                 count_fn = 0
                 for index, pair in df_scores.iterrows():
-                    if (pair['match'] is 1) and pair['score'] <= primary_threshold:
+                    if (pair['match'] == 1) and pair['score'] <= primary_threshold:
                         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
                         #print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
                         count_fn += 1
+                        df_fp_fn = df_fp_fn.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': pair['score']}, ignore_index=True)
                 print("count False negatives: ", count_fn)
 
                 # print("==========================True positives:========================================")
@@ -275,9 +281,9 @@ def tfidf_script(df, sim_funcs, primary_thresholds, char_thresholds, semantic_th
                 #     if (pair['match'] == 1) and pair['score'] >= primary_threshold:
                 #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
                 #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
-
-
-
+                
+                with pd.ExcelWriter("sBERT_semanticsoft.xlsx") as writer:
+                    df_fp_fn.to_excel(writer)
                 df_scores = classify_scores(df_scores, primary_threshold)
                 precision, recall, f1_score, matthew_correlation_coefficient = get_metrics(df_scores)
                 if metric == "precision":
@@ -288,7 +294,8 @@ def tfidf_script(df, sim_funcs, primary_thresholds, char_thresholds, semantic_th
                     scores.append(f1_score)
                 elif metric == "matthew":
                     scores.append(matthew_correlation_coefficient)   
-                print("primary_threshold: ", primary_threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
+                print("primary_threshold: ", primary_threshold, "char threshold: ", char_threshold, "similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
+
         dict[sim_func] = scores
     
     #print(dict)
@@ -314,7 +321,7 @@ def main():
     df = drop_rows_with_label(df, 2)
     #df = drop_exact_rows(df)
     semantic_threshold = 0.7
-    tfidf_script(df, [jaro_winkler_similarity], [0.3],[0.85], semantic_threshold, 'f1_score')
+    tfidf_script(df, [jaro_winkler_similarity], [0.4],[0.85], semantic_threshold, 'f1_score')
     # df_with_scores = softTFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     # #df_with_scores = TFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     
