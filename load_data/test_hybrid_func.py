@@ -20,7 +20,7 @@ from character_based_func import jaro_winkler_similarity, levenshtein_similarity
 #from py_stringmatching.similarity_measure.hybrid_similarity_measure import \
 #                                                    HybridSimilarityMeasure
 
-def softTFIDF(df, secondary_func=levenshtein_similarity, secondary_threshold = 0.5):
+def softTFIDF(df, secondary_func, secondary_threshold):
     corpus_list = get_corpus_list_for_pystringmatching(df) #create corpus from dataframe
 
     #manual softTFIDF:
@@ -221,20 +221,20 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
         scores = []           
         for primary_threshold in primary_thresholds:
             for secondary_threshold in secondary_thresholds:
-                df_scores = softTFIDF(df, secondary_func=sim_func, secondary_threshold = secondary_threshold)
+                df_scores = softTFIDF(df, sim_func, secondary_threshold)
                 #df_scores = TFIDF(df)
 
-                print("=========================False positives:========================================")
-                for index, pair in df_scores.iterrows():
-                    if (pair['match'] is 0) and pair['score'] >= primary_threshold:
-                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
-                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                # print("=========================False positives:========================================")
+                # for index, pair in df_scores.iterrows():
+                #     if (pair['match'] is 0) and pair['score'] >= primary_threshold:
+                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
-                print("==========================Flase negatives:========================================")
-                for index, pair in df_scores.iterrows():
-                    if (pair['match'] is 1) and pair['score'] <= primary_threshold:
-                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
-                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                # print("==========================Flase negatives:========================================")
+                # for index, pair in df_scores.iterrows():
+                #     if (pair['match'] is 1) and pair['score'] <= primary_threshold:
+                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
                 # print("==========================True positives:========================================")
                 # for index, pair in df_scores.iterrows():
@@ -254,7 +254,7 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                     scores.append(f1_score)
                 elif metric == "matthew":
                     scores.append(matthew_correlation_coefficient)   
-                print("primary_threshold: ", primary_threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
+                print("jaro winkler threshold: ", secondary_threshold, "cosine threshold: ", primary_threshold, " similarity func: ", sim_func, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient, " f1: ", f1_score)
         dict[sim_func] = scores
     
     #print(dict)
@@ -279,7 +279,7 @@ def main():
     df = drop_rows_with_label(df, 3)
     df = drop_rows_with_label(df, 2)
     #df = drop_exact_rows(df)
-    tfidf_script(df, [jaro_winkler_similarity], [0.42],[0.85], 'f1_score')
+    tfidf_script(df, [jaro_winkler_similarity], [0.25, 0.3, 0.35, 0.4, 0.45], [0.75, 0.8, 0.85, 0.9, 0.95], 'f1_score')
     # df_with_scores = softTFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     # #df_with_scores = TFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     

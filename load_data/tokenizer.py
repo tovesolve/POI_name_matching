@@ -68,6 +68,7 @@ def concat_token_list(token_list):
     return word
 
 def tokenize(name):
+    #return tokenize_on_space(name)
     return tokenize_name(name)
 
 #används inte
