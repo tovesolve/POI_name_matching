@@ -1,3 +1,4 @@
+from distutils.command.build import build
 from encodings import normalize_encoding
 from tokenizer import *
 from drop_label import drop_rows_with_label
@@ -30,7 +31,7 @@ def get_corpus_from_df(df):
     corpus = []
     for index, row in df.iterrows():
         corpus.append(row['osm_name'])
-        corpus.append(row['yelp_name'])
+        corpus.append(row['yelp_name'])   
     return set(corpus)
 
 def get_corpus_list_for_pystringmatching(df):
@@ -59,7 +60,7 @@ def get_corpus_list_for_pystringmatching(df):
     #print(new_corpus)
     return new_corpus
 
-
+# samma som TF (term frequency)
 def count_vectorization(corpus):
     """
     Vectorizes the corpus using count vectorization and creates a document term matrix and a dataframe. These represent the frequency count of each token in the unique POI names in the corpus.
@@ -216,11 +217,14 @@ def build_matrix(df):
     c = get_corpus_from_df(df)
     #X, vectorized_df = tfidf_vectorization(c)
     matrix, vectorized_df = count_vectorization(c)
+    #print(vectorized_df)
+    #print(get_vector_from_name("Savvor Restaurant and Lounge", vectorized_df))
     return matrix, vectorized_df
     
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
     #df = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')
+    #build_matrix(df)
 
 if __name__ == "__main__":
     main()

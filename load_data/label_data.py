@@ -22,6 +22,7 @@ import pandas as pd
 from sqlite3 import Timestamp
 from math import radians, sin, cos, sqrt, atan2
 import mpu
+from character_based_func import *
 
 pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
@@ -56,7 +57,7 @@ def close_pairs(df_osm, df_yelp, distance):
         for i, poi_yelp in df_yelp.iterrows(): #iterate through POIs in yelp dataset
             lat_yelp = float(poi_yelp['latitude'])
             lon_yelp = float(poi_yelp['longitude'])
-
+            
             #restrict only compare POIs if they are closely located
             if (lat_yelp < lat_osm+distance and lat_yelp > lat_osm-distance) and (lon_yelp < lon_osm+distance and lon_yelp > lon_osm-distance):     
                 alreadyLabelled = False
@@ -68,11 +69,13 @@ def close_pairs(df_osm, df_yelp, distance):
                         break
                         
                 if not alreadyLabelled:        
-                    poi_dist = distance_meters(lat_osm, lon_osm, lat_yelp, lon_yelp) #calculate distance between POIs
-                    
+                    poi_dist = distance_meters(lat_osm, lon_osm, lat_yelp, lon_yelp) #calculate distance between POIs  
+
                     print(poi_osm['name'], " , ", poi_yelp['name'], ' distance between: ', poi_dist) #Print pair for user to consider
                     if poi_osm['name'].lower() == poi_yelp['name'].lower(): #if names are an exact match
                         df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 1}, ignore_index=True)
+                    #elif levenshtein_similarity(poi_osm['name'].lower(), poi_yelp['name'].lower()) < 0.2:
+                        #df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 0}, ignore_index=True)
                     else:
                         while True:
                             str_num = input() #Take input from user
@@ -95,7 +98,7 @@ def close_pairs(df_osm, df_yelp, distance):
                         elif num == 3:
                             df_pairs = df_pairs.append({'osm_name': poi_osm['name'], 'yelp_name': poi_yelp['name'], 'osm_latitude': poi_osm['latitude'], 'osm_longitude': poi_osm['longitude'], 'yelp_latitude': poi_yelp['latitude'], 'yelp_longitude': poi_yelp['longitude'], 'distance': poi_dist, 'match': 3}, ignore_index=True)
 
-    df_pairs.to_pickle('./df_pairs_boston' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    #df_pairs.to_pickle('./v0_df_pairs_vancouver_all' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
     return df_pairs
 
 
@@ -188,10 +191,101 @@ def main_boston():
     print(df)
     print('Number of rows in labelled df: ', df.shape[0])
 
+def main_vancouver():
+    '''
+    Main method for schools, libraries and community spaces in Vancouver area
+    '''
+
+# top left 49.249979, -123.102980
+# bottom right 49.204954, -123.025537
+
+
+#49.258694, -123.128227
+
+
+    df_osm = pd.read_pickle('df_osm_bc2022-03-25.143424.pkl')   #read dataframe osm data
+    df_vancouver = pd.read_pickle('df_vancouver_mixed2022-03-25.140055.pkl') #read dataframe yelp data
+    
+    data_colnames = ['name', 'longitude', 'latitude'] #columns for the labelled dataset
+    df_vancouver_filtered = pd.DataFrame(columns=data_colnames)
+    print(df_vancouver.shape[0])
+    for i, poi in df_vancouver.iterrows():
+        dublett = False
+        for i, poi_filtered in df_vancouver_filtered.iterrows():
+            if poi['name'] == poi_filtered['name']:
+                dublett = True
+                #break
+                #print('already in df: ', poi['name'])
+        if dublett == False:        
+            df_vancouver_filtered = df_vancouver_filtered.append({'name': poi['name'], 'longitude': poi['longitude'], 'latitude': poi['latitude']}, ignore_index=True)
+
+    print(df_vancouver_filtered.shape[0])
+    df_vancouver = df_vancouver_filtered
+    
+    
+    print(df_osm.shape[0])
+    print(df_vancouver.shape[0])
+    df_osm = restrict_dataset(df_osm, 49.258694, 49.204954, -123.128227, -123.025537) 
+    #print(df_osm)
+    print(df_osm.shape[0])
+    df_vancouver = restrict_dataset(df_vancouver, 49.258694, 49.204954, -123.128227, -123.025537)
+    print(df_vancouver.shape[0])
+    print('Number of rows in osm df: ', df_osm.shape[0])
+    print('Number of rows in yelp df: ', df_vancouver.shape[0])
+
+    df = close_pairs(df_osm, df_vancouver, distance=0.0002)  #0.001=111m
+    print("Dataframe pairs:")
+    print(df)
+    print('Number of rows in labelled df: ', df.shape[0])
+    
+def main_all_vancouver():
+    '''
+    Main method for all yelp/osm POIs Vancouver area
+    '''
+
+# top left 49.249979, -123.102980
+# bottom right 49.204954, -123.025537
+
+
+#49.258694, -123.128227
+
+
+    df_osm = pd.read_pickle('df_osm_bc2022-03-25.143424.pkl')   #read dataframe osm data
+    df_yelp = pd.read_pickle('df_yelp_vancouver2022-03-28.095706.pkl') #read dataframe yelp data
+    
+    df_osm = restrict_dataset(df_osm, 49.258694, 49.204954, -123.128227, -123.025537)
+    df_yelp = restrict_dataset(df_yelp, 49.258694, 49.204954, -123.128227, -123.025537)
+    print('Number of rows in labelled df_osm: ', df_osm.shape[0])
+    print('Number of rows in labelled df_yelp: ', df_yelp.shape[0])
+
+    df = close_pairs(df_osm, df_yelp, distance=0.0002)  #0.001=111m
+    print("Dataframe pairs:")
+    print(df)
+    print('Number of rows in labelled df: ', df.shape[0])
+    
+def main_raleigh():
+    '''
+    Main method for Raleigh area
+    '''
+    df_osm = pd.read_pickle('df_osm_nc2022-03-25.150102.pkl')   #read dataframe osm data
+    df_yelp = pd.read_pickle('df_gov_nc2022-03-25.151855.pkl') #read dataframe yelp data
+
+    df_osm = restrict_dataset(df_osm, 35.859603, 35.655800, -78.902602, -78.701696) 
+    df_yelp = restrict_dataset(df_yelp, 35.859603, 35.655800, -78.902602, -78.701696)
+    print('Number of rows in labelled df_osm: ', df_osm.shape[0])
+    print('Number of rows in labelled df_yelp: ', df_yelp.shape[0])
+
+    df = close_pairs(df_osm, df_yelp, distance=0.0002)  #0.001=111m
+    print("Dataframe pairs:")
+    print(df)
+    print('Number of rows in labelled df: ', df.shape[0])
 
 def main():
-    main_florida()
+    #main_florida()
     #main_boston()
+    main_vancouver()
+    main_all_vancouver()
+    main_raleigh()
 
 if __name__ == "__main__":
     main()

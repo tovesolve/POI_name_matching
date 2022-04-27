@@ -10,6 +10,8 @@ import pandas as pd
 Character-based similarity functions used in the similarity evaluation scripts. 
 """
 
+#NLTK package does not do to lower case
+
 def levenshtein_similarity(str1, str2):
     """
     Calculates the levenshtein similarity between two strings and normalizes the similarity score.

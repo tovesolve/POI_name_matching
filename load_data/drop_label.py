@@ -42,14 +42,12 @@ def drop_rows_with_label(df, label_value):
 
 def drop_exact_rows(df):
     """
-    Drops all rows in the dataframe with the label value
+    Drops all rows in the dataframe where osm_name==yelp_name, i.e. there is an exact match.
 
     Parameters
     ----------
     df : dataframe
         the pickled dataframe (.pkl-file) which label should be dropped
-    label_value : int
-        the value of the label to be dropped
 
     Returns
     -------
