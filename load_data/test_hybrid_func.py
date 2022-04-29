@@ -3,6 +3,7 @@ from threading import local
 from traceback import print_tb
 from drop_label import drop_rows_with_label, drop_exact_rows
 from baseline import calculate_similarity_score
+from drop_label import *
 from token_based_func import *
 from evaluation_metrics import *
 import matplotlib.pyplot as plt
@@ -21,7 +22,7 @@ from character_based_func import jaro_winkler_similarity, levenshtein_similarity
 #from py_stringmatching.similarity_measure.hybrid_similarity_measure import \
 #                                                    HybridSimilarityMeasure
 
-def softTFIDF(df, secondary_func=levenshtein_similarity, secondary_threshold = 0.5):
+def softTFIDF(df, secondary_func, secondary_threshold):
     corpus_list = get_corpus_list_for_pystringmatching(df) #create corpus from dataframe
 
     #manual softTFIDF:
@@ -271,23 +272,23 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                 #df_scores = TFIDF(df)
                 df_scores = softTFIDF_most_similar_collection(df, secondary_func=sim_func, secondary_threshold = secondary_threshold)
 
-                print("=========================False positives:========================================")
-                for index, pair in df_scores.iterrows():
-                    if (pair['match'] is 0) and pair['score'] >= primary_threshold:
-                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
-                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                # print("=========================False positives:========================================")
+                # for index, pair in df_scores.iterrows():
+                #     if (pair['match'] is 0) and pair['score'] >= primary_threshold:
+                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
-                print("==========================Flase negatives:========================================")
-                for index, pair in df_scores.iterrows():
-                    if (pair['match'] is 1) and pair['score'] <= primary_threshold:
-                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
-                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                # print("==========================Flase negatives:========================================")
+                # for index, pair in df_scores.iterrows():
+                #     if (pair['match'] is 1) and pair['score'] <= primary_threshold:
+                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
-                print("==========================True positives:========================================")
-                for index, pair in df_scores.iterrows():
-                    if (pair['match'] == 1) and pair['score'] >= primary_threshold:
-                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
-                        print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                # print("==========================True positives:========================================")
+                # for index, pair in df_scores.iterrows():
+                #     if (pair['match'] == 1) and pair['score'] >= primary_threshold:
+                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
 
 
@@ -301,30 +302,32 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                     scores.append(f1_score)
                 elif metric == "matthew":
                     scores.append(matthew_correlation_coefficient)   
-                print("primary_threshold: ", primary_threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
+                print("jaro winkler threshold: ", secondary_threshold, "cosine threshold: ", primary_threshold, " similarity func: ", sim_func, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient, " f1: ", f1_score)
         dict[sim_func] = scores
     
-    print(dict)
+    #print(dict)
     threshold_tuples = [] 
     for i in range(len(primary_thresholds)):
         for j in range(len(secondary_thresholds)):
             threshold_tuples.append((primary_thresholds[i], secondary_thresholds[j]))
-    print(threshold_tuples)
+    #print(threshold_tuples)
 
-    plot_evaluation_graph(dict, threshold_tuples, sim_funcs, metric)
+    #plot_evaluation_graph(dict, threshold_tuples, sim_funcs, metric)
 
 
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
-    df1 = pd.read_pickle('v0_df_pairs_florida2022-02-28.094015.pkl')
-    df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')
-    df3 = pd.read_pickle('df_pairs_nc2022-03-25.152112.pkl')    
-    df4 = pd.read_pickle('v0_df_pairs_vancouver2022-03-25.153749.pkl')
-    df = pd.concat([df1, df2, df3, df4])
+    df1 = pd.read_pickle('v0.5_df_pairs_florida2022-02-28.094015.pkl')
+    df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')  
+    df3 = pd.read_pickle('v0_df_pairs_vancouver_all2022-03-28.115404.pkl')
+    df4 = pd.read_pickle('v0_df_pairs_vancouver_schools_libraries_community2022-03-25.153749.pkl') 
+    df5 = pd.read_pickle('v0.5_df_pairs_nc2022-03-25.152112.pkl') 
+    df = pd.concat([df1, df2, df3, df4, df5])
+    df = drop_rows_with_label(df, 3)
     df = drop_rows_with_label(df, 2)
-    df = drop_exact_rows(df)
-    tfidf_script(df, [jaro_winkler_similarity], [0.3],[0.85], 'f1_score')
+    #df = drop_exact_rows(df)
+    tfidf_script(df, [jaro_winkler_similarity], [0.25, 0.3, 0.35, 0.4, 0.45], [0.75, 0.8, 0.85, 0.9, 0.95], 'f1_score')
     # df_with_scores = softTFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     # #df_with_scores = TFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     
