@@ -54,8 +54,23 @@ def drop_exact_rows(df):
     dataframe
         an updated dataframe after dropping the rows
     """
+    print(df.shape)
+    count = 0
+    data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match']
+    df_without_exact = pd.DataFrame(columns=data_colnames) #create dataframe whithout exact matches
 
-    return df.drop(df[df['osm_name'] == df['yelp_name']].index)
+    for index, pair in df.iterrows():
+        if pair['osm_name'] == pair['yelp_name']:
+            #print(pair)
+            count +=1
+        else:
+            df_without_exact = df_without_exact.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match']}, ignore_index=True)
+
+
+    print(count)
+    print(df_without_exact.shape)
+
+    return df_without_exact
 
 def main():
     # parsing input arguments from command line to variables
