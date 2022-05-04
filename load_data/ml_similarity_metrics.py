@@ -75,9 +75,9 @@ def randomForest(df):
     y = df['match']
     
     k=5
-    kf = KFold(n_splits=k, random_state=None, shuffle=True)
+    kf = KFold(n_splits=k, random_state=0, shuffle=True)
     #model = RandomForestClassifier(n_estimators=600 , random_state=0 , n_jobs=2, max_depth=100) #santos params
-    model = RandomForestClassifier()
+    model = RandomForestClassifier(random_state=0)
     precision = []
     recall = []
     f1 = []
@@ -165,8 +165,8 @@ def gradientBoost(df):
     y = df['match']
     
     k=5
-    kf = KFold(n_splits=k, random_state=None, shuffle=True)
-    model = xgboost.XGBClassifier() #(n_estimators=3000 , seed=0)
+    kf = KFold(n_splits=k, random_state=0, shuffle=True)
+    model = xgboost.XGBClassifier(random_state=0) #(n_estimators=3000 , seed=0)
     precision = []
     recall = []
     f1 = []
@@ -248,8 +248,8 @@ def MLPClassifier_neuralnetwork(df):
     y = df['match']
     
     k=5
-    kf = KFold(n_splits=k, random_state=None, shuffle=True)
-    model = MLPClassifier(hidden_layer_sizes=(100,50, 50))
+    kf = KFold(n_splits=k, random_state=0, shuffle=True)
+    model = MLPClassifier(hidden_layer_sizes=(100,50, 50), random_state=0)
     precision = []
     recall = []
     f1 = []
@@ -496,7 +496,13 @@ def main():
     #load feature matrix with similarity scores:
     df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_2022-05-04.134203.pkl') # load saved df with features
     print("shape df: ", df_with_similarity_metrics.shape)
-    
+
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaccard'], axis=1)
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
+
+
     # df_with_similarity_metrics = temp_update_df(df_with_similarity_metrics)
     # df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
     # print('saved')
