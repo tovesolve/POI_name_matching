@@ -1,3 +1,4 @@
+from re import X
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -16,7 +17,9 @@ import word_embeddings_cosine
 import word_embeddings
 from sentence_transformers import SentenceTransformer
 from sklearn.model_selection import KFold
+from sklearn.inspection import permutation_importance
 import xgboost
+import shap
 
 def prepareCorpus(df):
     corpus_list = token_based_func.get_corpus_list_for_pystringmatching(df) #create corpus from dataframe
@@ -55,7 +58,7 @@ def createDataFrame(df):
         softtfidf_score = test_hybrid_func.calc_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, 0.9, character_based_func.jaro_winkler_similarity, document_frequency) #dessa thresholds är med det bästa vi testat hittils, ev uppdatera
         
         #ändra modellen och get_embedding i calc-metoden
-        semanticsofttfidf_score = semantic_soft_tfidf.calc_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, 0.85, character_based_func.jaro_winkler_similarity, 0.75, sBERT_model, document_frequency, tokenizer_BERT) #dessa thresholds är med det bästa vi testat hittils, ev uppdatera. (tokenizer BERT används inte)
+        semanticsofttfidf_score = semantic_soft_tfidf.calc_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, 0.85, character_based_func.jaro_winkler_similarity, 0.7, bpemb_model, document_frequency, tokenizer_BERT) #dessa thresholds är med det bästa vi testat hittils, ev uppdatera. (tokenizer BERT används inte)
         sbert_score = sklearn_cosine_similarity(word_embeddings.get_embedding_sBERT(pair['osm_name'], sBERT_model), word_embeddings.get_embedding_sBERT(pair['yelp_name'], sBERT_model))[0][0]
         bpemb_score = sklearn_cosine_similarity(word_embeddings.get_embedding_BPEmb(pair['osm_name'], bpemb_model), word_embeddings.get_embedding_BPEmb(pair['yelp_name'], bpemb_model))[0][0]
         bert_score = sklearn_cosine_similarity(word_embeddings.get_embedding_BERT(pair['osm_name'], BERT_model, tokenizer_BERT), word_embeddings.get_embedding_BERT(pair['yelp_name'], BERT_model, tokenizer_BERT))[0][0]
@@ -83,12 +86,19 @@ def randomForest(df):
     data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
     df_fp_fn = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
     
+    X_train_all_without_names = X.drop(['osm_name', 'yelp_name'], axis=1)
+    X_test_all_without_names = X.drop(['osm_name', 'yelp_name'], axis=1)
+    
     for train_index , test_index in kf.split(X):
         X_train , X_test = X.iloc[train_index,:],X.iloc[test_index,:]
         y_train , y_test = y[train_index] , y[test_index]
-    
+        
         X_train_without_names = X_train.drop(['osm_name', 'yelp_name'], axis=1)
         X_test_without_names = X_test.drop(['osm_name', 'yelp_name'], axis=1)
+        
+        #X_train_all = pd.concat([X_train_all, X_train_without_names])
+        #X_test_all = pd.concat([X_test_all, X_test_without_names]) # as floats?
+        #y_train_all = pd.concat([y_train_all, y_train])
         
         model = model.fit(X_train_without_names.astype(float), y_train.astype(float))
         predictions = model.predict(X_test_without_names.astype(float))
@@ -130,17 +140,22 @@ def randomForest(df):
         f1.append(f1_score(predictions, y_test.astype(float)))
         print("mcc: ", matthews_corrcoef(predictions, y_test.astype(float)))
         mcc.append(matthews_corrcoef(predictions, y_test.astype(float)))
-     
+        
+    
+    #train and test on all data to plot feature importance:
+    model = model.fit(X_train_all_without_names.astype(float), y.astype(float))
+    plotRandomForest(model, X_train_all_without_names.astype(float), X_test_all_without_names.astype(float))
+
     avg_precision = sum(precision)/k
     avg_recall = sum(precision)/k
     avg_f1 = sum(f1)/k
     avg_mcc = sum(mcc)/k
     
     # Byt namn vid körningarna
-    with pd.ExcelWriter("ml-random-forest-similarity-metrics-full-dataset-default-sbert.xlsx") as writer:
-        df_fp_fn.to_excel(writer)
+    # with pd.ExcelWriter("ml-random-forest-similarity-metrics-full-dataset-default-sbert.xlsx") as writer:
+    #     df_fp_fn.to_excel(writer)
     
-    plotFeatureImportance(model)
+    #plotFeatureImportance(model)
     
     return avg_precision, avg_recall, avg_f1, avg_mcc
     #return precision_score(predictions, y_test.astype(float)), recall_score(predictions, y_test.astype(float)), f1_score(predictions, y_test.astype(float)), matthews_corrcoef(predictions, y_test.astype(float))
@@ -157,6 +172,10 @@ def gradientBoost(df):
     f1 = []
     mcc = []
     
+    
+    X_train_all_without_names = X.drop(['osm_name', 'yelp_name'], axis=1)
+    X_test_all_without_names = X.drop(['osm_name', 'yelp_name'], axis=1)
+    
     data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
     df_fp_fn = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
     
@@ -207,6 +226,10 @@ def gradientBoost(df):
         f1.append(f1_score(predictions, y_test.astype(float)))
         print("mcc: ", matthews_corrcoef(predictions, y_test.astype(float)))
         mcc.append(matthews_corrcoef(predictions, y_test.astype(float)))
+        
+    #train and test on all data to plot feature importance:
+    model_full = model.fit(X_train_all_without_names.astype(float), y.astype(float))
+    plotGradientBoost(model_full, X_train_all_without_names.astype(float), X_test_all_without_names.astype(float))
      
     avg_precision = sum(precision)/k
     avg_recall = sum(precision)/k
@@ -216,8 +239,6 @@ def gradientBoost(df):
     # Byt namn vid körningarna
     with pd.ExcelWriter("ml-boosted-forest-similarity-metrics-whole-dataset-default-sbert.xlsx") as writer:
         df_fp_fn.to_excel(writer)
-        
-    plotFeatureImportance(model)
     
     return avg_precision, avg_recall, avg_f1, avg_mcc
     #return precision_score(predictions, y_test.astype(float)), recall_score(predictions, y_test.astype(float)), f1_score(predictions, y_test.astype(float)), matthews_corrcoef(predictions, y_test.astype(float))
@@ -228,12 +249,14 @@ def MLPClassifier_neuralnetwork(df):
     
     k=5
     kf = KFold(n_splits=k, random_state=None, shuffle=True)
-    #model = RandomForestClassifier(n_estimators=600 , random_state=0 , n_jobs=2, max_depth=100) #santos params
     model = MLPClassifier(hidden_layer_sizes=(100,50, 50))
     precision = []
     recall = []
     f1 = []
     mcc = []
+    
+    X_train_all_without_names = X.drop(['osm_name', 'yelp_name'], axis=1)
+    X_test_all_without_names = X.drop(['osm_name', 'yelp_name'], axis=1)
     
     data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
     df_fp_fn = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
@@ -245,7 +268,7 @@ def MLPClassifier_neuralnetwork(df):
         X_train_without_names = X_train.drop(['osm_name', 'yelp_name'], axis=1)
         X_test_without_names = X_test.drop(['osm_name', 'yelp_name'], axis=1)
         
-        model = model.fit(X_train_without_names.astype(float), y_train.astype(float))
+        model = model.fit(X_train_without_names.astype(float), y_train.astype(float)) #skriver över den gamla modellen. Vill vi inte göra det kan man sätta warmstart till True
         predictions = model.predict(X_test_without_names.astype(float))
         
         df_incorrect = pd.DataFrame(X_test['osm_name'], columns=['osm_name']) #create dataframe where similarity score can be added to pairs
@@ -285,6 +308,10 @@ def MLPClassifier_neuralnetwork(df):
         f1.append(f1_score(predictions, y_test.astype(float)))
         print("mcc: ", matthews_corrcoef(predictions, y_test.astype(float)))
         mcc.append(matthews_corrcoef(predictions, y_test.astype(float)))
+    
+    #train and test on all data to plot feature importance:
+    model_full = model.fit(X_train_all_without_names.astype(float), y.astype(float))
+    plotNeuralNetwork(model_full, X_train_all_without_names.astype(float), X_test_all_without_names.astype(float))
      
     avg_precision = sum(precision)/k
     avg_recall = sum(precision)/k
@@ -292,8 +319,8 @@ def MLPClassifier_neuralnetwork(df):
     avg_mcc = sum(mcc)/k
     
     # Byt namn vid körningarna
-    with pd.ExcelWriter("ml-mlp-classifier-similarity-metrics-full-dataset-default-sbert.xlsx") as writer:
-        df_fp_fn.to_excel(writer)
+    # with pd.ExcelWriter("ml-mlp-classifier-similarity-metrics-full-dataset-default-sbert.xlsx") as writer:
+    #     df_fp_fn.to_excel(writer)
     
     #plotFeatureImportance(model)
     
@@ -301,26 +328,99 @@ def MLPClassifier_neuralnetwork(df):
     #return precision_score(predictions, y_test.astype(float)), recall_score(predictions, y_test.astype(float)), f1_score(predictions, y_test.astype(float)), matthews_corrcoef(predictions, y_test.astype(float))
 
 
-def plotFeatureImportance(model):
-    importances = model.feature_importances_
-    std = np.std([tree.feature_importances_ for tree in model.estimators_], axis=0)
-    feature_names = ['levenshtein', 'jaro', 'jaro_winkler', 'cosine', 'jaccard', 'TFIDF', 'softTFIDF', 'semanticSoftTFIDF', 'sBERT', 'BPEmb', 'BERT']
 
+def plotRandomForest(model, X_train, X_test):    
+    #samples = shap.sample(X_train, 10)
+    #explainer = shap.KernelExplainer(model.predict, samples)   
+    #shap_values = explainer.shap_values(X_test) #ta ut shap-values för varje split
 
-    #finns lite olika feature importance metrics, MDI, MDA, kolla på dessa
-    forest_importances = pd.Series(importances, index=feature_names)
-    fig, ax = plt.subplots()
-    forest_importances.plot.bar(yerr=std, ax=ax)
-    ax.set_title("Feature importances using MDI")
-    ax.set_ylabel("Mean decrease in impurity")
-    fig.tight_layout()
+    #shap.summary_plot(shap_values, X_test)
+    
+    # fig = plt.gcf()
+    # plt.show()
+    # plt.draw()
+    
+    # #byt namn på den här
+    # img_name = 'dot_plot_random_forest_bpemb_default_whole_dataset' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.png' #TODO save to better file name
+    # fig.savefig(img_name, dpi=100)
+    # plt.clf()
+    
+    #bar plot using TreeExplainer
+    explainer = shap.TreeExplainer(model, X_train)
+    shap_values = explainer.shap_values(X_test) #ta ut shap-values för varje split
+    
+    #bar plot using KernelExplainer
+    #shap.summary_plot(shap_values, X_test, plot_type="bar")
+    shap.summary_plot(shap_values, X_test)
     
     fig = plt.gcf()
     plt.show()
     plt.draw()
-    img_name = 'MDI_gradient_boost_sbert_default_whole_dataset' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.png' #TODO save to better file name
+    
+    #byt namn på den här
+    img_name = 'bar_tree_plot_random_forest_bpemb_default_whole_dataset' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.png' #TODO save to better file name
     fig.savefig(img_name, dpi=100)
     
+    plt.clf()
+    
+def plotGradientBoost(model, X_train, X_test):
+    explainer = shap.TreeExplainer(model, X_train) 
+    shap_values = explainer.shap_values(X_test) #ta ut shap-values för varje split
+    
+    # Dot plot
+    shap.summary_plot(shap_values, X_test)
+    
+    fig = plt.gcf()
+    plt.show()
+    plt.draw()
+    
+    #byt namn på den här
+    img_name = 'dot_plot_gradient_boost_bpemb_default_whole_dataset' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.png' #TODO save to better file name
+    fig.savefig(img_name, dpi=100)
+    
+    plt.clf()
+
+    # bar plot
+    shap.summary_plot(shap_values, X_test, plot_type="bar")
+    
+    fig = plt.gcf()
+    plt.show()
+    plt.draw()
+    
+    #byt namn på den här
+    img_name = 'bar_plot_gradient_bpemb_default_whole_dataset' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.png' #TODO save to better file name
+    fig.savefig(img_name, dpi=100)
+    plt.clf()
+    
+    
+def plotNeuralNetwork(model, X_train, X_test):
+    explainer = shap.KernelExplainer(model.predict, X_train) 
+    shap_values = explainer.shap_values(X_test) #ta ut shap-values för varje split
+    
+    # Dot plot
+    shap.summary_plot(shap_values, X_test)
+    
+    fig = plt.gcf()
+    plt.show()
+    plt.draw()
+    
+    #byt namn på den här
+    img_name = 'dot_plot_neural_network_bpemb_default_whole_dataset' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.png' #TODO save to better file name
+    fig.savefig(img_name, dpi=100)
+    
+    plt.clf()
+
+    # bar plot
+    shap.summary_plot(shap_values, X_test, plot_type="bar")
+    
+    fig = plt.gcf()
+    plt.show()
+    plt.draw()
+    
+    #byt namn på den här
+    img_name = 'bar_plot_neural_network_default_whole_dataset' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.png' #TODO save to better file name
+    fig.savefig(img_name, dpi=100)
+    plt.clf()    
 
 
 def keras_neuralnetwork(df):
@@ -387,6 +487,7 @@ def temp_update_df(df):
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
     #df = load_df()
+    #df_with_similarity_metrics = createDataFrame(df)
 
     #create and save feature matrix with similarity scores:
     # df_with_similarity_metrics = createDataFrame(df)

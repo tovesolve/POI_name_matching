@@ -9,7 +9,6 @@ from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine_similar
 from tokenizer import tokenize_name
 from transformers import BertTokenizer, BertModel
 import torch
-from usif import *
 
 
 #===================================BPEmb======================
@@ -25,7 +24,7 @@ def get_embedding_BPEmb(word, model):
     # tokens = bpemb_en.encode(word)
     # print(tokens)
 
-    np.set_printoptions(threshold=sys.maxsize)
+    #np.set_printoptions(threshold=sys.maxsize)
     embedding = model.embed(word)
     # print("word: ", word)
     # print("embedding before mean/smooting: ", embedding)
