@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
 from word_embeddings_cosine import *
 from sklearn.model_selection import train_test_split
@@ -219,6 +220,84 @@ def gradientBoost(df):
     return avg_precision, avg_recall, avg_f1, avg_mcc
     #return precision_score(predictions, y_test.astype(float)), recall_score(predictions, y_test.astype(float)), f1_score(predictions, y_test.astype(float)), matthews_corrcoef(predictions, y_test.astype(float))
 
+def MLPClassifier_neuralnetwork(df):
+    X = df.drop(['match'], axis=1)
+    y = df['match']
+    
+    k=5
+    kf = KFold(n_splits=k, random_state=None, shuffle=True)
+    #model = RandomForestClassifier(n_estimators=600 , random_state=0 , n_jobs=2, max_depth=100) #santos params
+    model = MLPClassifier(hidden_layer_sizes=(100,50, 50))
+    precision = []
+    recall = []
+    f1 = []
+    mcc = []
+    
+    data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
+    df_fp_fn = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
+    
+    for train_index , test_index in kf.split(X):
+        X_train , X_test = X.iloc[train_index,:],X.iloc[test_index,:]
+        y_train , y_test = y[train_index] , y[test_index]
+    
+        X_train_without_names = X_train.drop(['osm_name', 'yelp_name'], axis=1)
+        X_test_without_names = X_test.drop(['osm_name', 'yelp_name'], axis=1)
+        
+        model = model.fit(X_train_without_names.astype(float), y_train.astype(float))
+        predictions = model.predict(X_test_without_names.astype(float))
+        
+        df_incorrect = pd.DataFrame(X_test['osm_name'], columns=['osm_name']) #create dataframe where similarity score can be added to pairs
+        df_incorrect['yelp_name'] = X_test['yelp_name']
+        df_incorrect['prediction'] = predictions
+        df_incorrect['correct_label'] = y_test
+        
+        df_incorrect = df_incorrect[df_incorrect['prediction'] != df_incorrect['correct_label']]
+        df_fp_fn = pd.concat([df_fp_fn, df_incorrect])
+        
+        print("EVALUATION for split: ")
+        
+        print("=========================False positives:========================================")
+        for index, pair in df_incorrect.iterrows():
+            if (pair['prediction'] == 1) and (pair['correct_label'] == 0):
+                print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+
+
+        print("==========================Flase negatives:========================================")
+        for index, pair in df_incorrect.iterrows():
+            if (pair['prediction'] == 0) and (pair['correct_label'] == 1):
+                print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+
+        
+        tn, fp, fn, tp = confusion_matrix(list(y_test), list(predictions), labels=[0, 1]).ravel()
+        print("tn: ", tn)
+        print("tp: ", tp)
+        print("fp: ", fp)
+        print("fn: ", fn)
+        
+    
+        print("precision: ", precision_score(predictions, y_test.astype(float)))
+        precision.append(precision_score(predictions, y_test.astype(float)))
+        print("recall: ", recall_score(predictions, y_test.astype(float)))
+        recall.append(recall_score(predictions, y_test.astype(float)))
+        print("f1: ", f1_score(predictions, y_test.astype(float)))
+        f1.append(f1_score(predictions, y_test.astype(float)))
+        print("mcc: ", matthews_corrcoef(predictions, y_test.astype(float)))
+        mcc.append(matthews_corrcoef(predictions, y_test.astype(float)))
+     
+    avg_precision = sum(precision)/k
+    avg_recall = sum(precision)/k
+    avg_f1 = sum(f1)/k
+    avg_mcc = sum(mcc)/k
+    
+    # Byt namn vid körningarna
+    with pd.ExcelWriter("ml-mlp-classifier-similarity-metrics-full-dataset-default-sbert.xlsx") as writer:
+        df_fp_fn.to_excel(writer)
+    
+    #plotFeatureImportance(model)
+    
+    return avg_precision, avg_recall, avg_f1, avg_mcc
+    #return precision_score(predictions, y_test.astype(float)), recall_score(predictions, y_test.astype(float)), f1_score(predictions, y_test.astype(float)), matthews_corrcoef(predictions, y_test.astype(float))
+
 
 def plotFeatureImportance(model):
     importances = model.feature_importances_
@@ -244,9 +323,17 @@ def plotFeatureImportance(model):
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
     df = load_df()
-    df_with_similarity_metrics = createDataFrame(df)
-    precision, recall, f1, mcc = gradientBoost(df_with_similarity_metrics)
+
+    #create and save feature matrix with similarity scores:
+    #df_with_similarity_metrics = createDataFrame(df)
+    #df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    #print('saved')
+    #load feature matrix with similarity scores:
+    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_2022-05-03.161109.pkl') # load saved df with features
+
+    #precision, recall, f1, mcc = gradientBoost(df_with_similarity_metrics)
     #precision, recall, f1, mcc = randomForest(df_with_similarity_metrics)
+    precision, recall, f1, mcc = MLPClassifier_neuralnetwork(df_with_similarity_metrics)
 
     print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
     
