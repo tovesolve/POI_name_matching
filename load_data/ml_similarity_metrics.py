@@ -6,6 +6,8 @@ from sklearn.metrics import accuracy_score
 from word_embeddings_cosine import *
 from sklearn.model_selection import train_test_split
 import character_based_func
+import tensorflow as tf
+from tensorflow import keras
 import token_based_func
 import test_hybrid_func
 import semantic_soft_tfidf
@@ -320,20 +322,89 @@ def plotFeatureImportance(model):
     fig.savefig(img_name, dpi=100)
     
 
+
+def keras_neuralnetwork(df):
+    X = df.drop(['match'], axis=1)
+    y = df['match']
+    
+    k=5
+    kf = KFold(n_splits=k, random_state=None, shuffle=True)
+    #model = RandomForestClassifier(n_estimators=600 , random_state=0 , n_jobs=2, max_depth=100) #santos params
+    model = keras.Sequential([
+        keras.layers.Reshape(target_shape=(28 * 28,), input_shape=(28, 28)),
+        keras.layers.Dense(units=256, activation='relu'),
+        keras.layers.Dense(units=192, activation='relu'),
+        keras.layers.Dense(units=128, activation='relu'),
+        keras.layers.Dense(units=10, activation='softmax')
+    ])
+    precision = []
+    recall = []
+    f1 = []
+    mcc = []
+    
+    data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
+    df_fp_fn = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    X_train = X_train.drop(['osm_name', 'yelp_name'], axis=1)
+    X_test = X_test.drop(['osm_name', 'yelp_name'], axis=1)
+
+
+
+    model.compile(optimizer='adam', 
+              loss=tf.losses.CategoricalCrossentropy(from_logits=True),
+              metrics=[tf.keras.metrics.Precision(), tf.keras.metrics.Recall()])
+
+    model.fit(X_train, y_train)
+
+    model.evaluate(X_test,  y_test, verbose=2)
+
+
+def temp_update_df(df):
+
+    corpus_list, document_frequency = prepareCorpus(df)
+    bpemb_model = BPEmbedding(lang="en", dim=300, vs=50000)
+    sBERT_model = SentenceTransformer("all-mpnet-base-v2")
+    tokenizer_BERT = BertTokenizer.from_pretrained('bert-base-uncased')
+    BERT_model = BertModel.from_pretrained("bert-base-uncased")
+
+    semanticsofttfidf_score_BERT_list = []
+    semanticsofttfidf_score_BPEmb_list = []
+
+    for index, pair in df.iterrows():
+        #ändra modellen och get_embedding i calc-metoden
+        semanticsofttfidf_score_BPEmb = semantic_soft_tfidf.calc_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, 0.85, character_based_func.jaro_winkler_similarity, 0.7, bpemb_model, document_frequency, tokenizer_BERT) #dessa thresholds är med det bästa vi testat hittils, ev uppdatera. (tokenizer BERT används inte)
+        semanticsofttfidf_score_BPEmb_list.append(semanticsofttfidf_score_BPEmb)    
+        #semanticsofttfidf_score_BERT = semantic_soft_tfidf.calc_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, 0.85, character_based_func.jaro_winkler_similarity, 0.95, BERT_model, document_frequency, tokenizer_BERT) #dessa thresholds är med det bästa vi testat hittils, ev uppdatera. (tokenizer BERT används inte)
+        #semanticsofttfidf_score_BERT_list.append(semanticsofttfidf_score_BERT)
+
+    #df['semanticsofttfidf_BERT'] = semanticsofttfidf_score_BERT_list
+    df['semanticsofttfidf_BPEmb'] = semanticsofttfidf_score_BPEmb_list
+    print(df)
+
+    return df
+
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
-    df = load_df()
+    #df = load_df()
 
     #create and save feature matrix with similarity scores:
-    #df_with_similarity_metrics = createDataFrame(df)
-    #df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
-    #print('saved')
+    # df_with_similarity_metrics = createDataFrame(df)
+    # df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    # print('saved')
     #load feature matrix with similarity scores:
-    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_2022-05-03.161109.pkl') # load saved df with features
+    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_2022-05-04.134203.pkl') # load saved df with features
+    print("shape df: ", df_with_similarity_metrics.shape)
+    
+    # df_with_similarity_metrics = temp_update_df(df_with_similarity_metrics)
+    # df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    # print('saved')
+    # with pd.ExcelWriter("df_sim_metrics_pickle.xlsx") as writer:
+    #     df_with_similarity_metrics.to_excel(writer)
 
     #precision, recall, f1, mcc = gradientBoost(df_with_similarity_metrics)
-    #precision, recall, f1, mcc = randomForest(df_with_similarity_metrics)
-    precision, recall, f1, mcc = MLPClassifier_neuralnetwork(df_with_similarity_metrics)
+    precision, recall, f1, mcc = randomForest(df_with_similarity_metrics)
+    #precision, recall, f1, mcc = MLPClassifier_neuralnetwork(df_with_similarity_metrics)
 
     print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
     
