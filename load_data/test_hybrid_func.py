@@ -199,9 +199,9 @@ def calc_tfidf_for_pair(osm_name, yelp_name, corpus_list, document_frequency):
         v_x_2 += v_x * v_x
         #print(v_y)
         v_y_2 += v_y * v_y
-    print("result manual tfidf:")
+    #print("result manual tfidf:")
     score = (0.0 if v_x_y == 0 else v_x_y / (sqrt(v_x_2) * sqrt(v_y_2)))   
-    print(score)
+    #print(score)
     return score
                     
 
