@@ -18,6 +18,7 @@ import word_embeddings
 from sentence_transformers import SentenceTransformer
 from sklearn.model_selection import KFold
 from sklearn.inspection import permutation_importance
+from tokenizer import tokenize
 import xgboost
 import shap
 
@@ -99,24 +100,24 @@ def validateModel(X_train, y_train, model, seed):
         df_incorrect = df_incorrect[df_incorrect['prediction'] != df_incorrect['correct_label']]
         df_fp_fn = pd.concat([df_fp_fn, df_incorrect])
         
-        # print("EVALUATION for split: ")
+        print("EVALUATION for split: ")
         
-        # print("=========================False positives:========================================")
-        # for index, pair in df_incorrect.iterrows():
-        #     if (pair['prediction'] == 1) and (pair['correct_label'] == 0):
-        #         print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+        print("=========================False positives:========================================")
+        for index, pair in df_incorrect.iterrows():
+            if (pair['prediction'] == 1) and (pair['correct_label'] == 0):
+                print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
 
 
-        # print("==========================Flase negatives:========================================")
-        # for index, pair in df_incorrect.iterrows():
-        #     if (pair['prediction'] == 0) and (pair['correct_label'] == 1):
-        #         print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+        print("==========================Flase negatives:========================================")
+        for index, pair in df_incorrect.iterrows():
+            if (pair['prediction'] == 0) and (pair['correct_label'] == 1):
+                print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
         
-        # tn, fp, fn, tp = confusion_matrix(list(y_val_fold), list(predictions), labels=[0, 1]).ravel()
-        # print("tn: ", tn)
-        # print("tp: ", tp)
-        # print("fp: ", fp)
-        # print("fn: ", fn)
+        tn, fp, fn, tp = confusion_matrix(list(y_val_fold), list(predictions), labels=[0, 1]).ravel()
+        print("tn: ", tn)
+        print("tp: ", tp)
+        print("fp: ", fp)
+        print("fn: ", fn)
     
         print("precision: ", precision_score(predictions, y_val_fold.astype(float)))
         precision.append(precision_score(predictions, y_val_fold.astype(float)))
@@ -305,7 +306,85 @@ def temp_update_df(df):
     df['semanticsofttfidf_BPEmb'] = semanticsofttfidf_score_BPEmb_list
     print(df)
 
+        # df_with_similarity_metrics = temp_update_df(df_with_similarity_metrics)
+    # df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    # print('saved')
+    # with pd.ExcelWriter("df_sim_metrics_pickle.xlsx") as writer:
+    #     df_with_similarity_metrics.to_excel(writer)
+
+
     return df
+
+
+def add_tokencount_to_df(df):
+    token_counts_osm = []
+    token_counts_yelp = []
+    token_counts_ratio = []
+    for index, pair in df.iterrows():
+        len_osm_name = len(tokenize(pair['osm_name']))
+        len_yelp_name = len(tokenize(pair['yelp_name']))
+        ratio = max(len_osm_name, len_yelp_name)/min(len_osm_name, len_yelp_name)
+        # print(pair['osm_name'], " length: ", len_osm_name)
+        # print(pair['yelp_name'], " length: ", len_yelp_name)
+        # print("ratio: ", ratio)
+        token_counts_osm.append(len_osm_name)
+        token_counts_yelp.append(len_yelp_name)
+        token_counts_ratio.append(ratio)
+    
+    #df['tlen_osm'] = token_counts_osm
+    #df['tlen_yelp'] = token_counts_yelp
+    df['tlen_ratio'] = token_counts_ratio
+    print(df)
+
+    df.to_pickle('./similarity_mertics_df_w_tokencount' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    print('saved')
+    # with pd.ExcelWriter("df_sim_metrics_pickle.xlsx") as writer:
+    #     df_with_similarity_metrics.to_excel(writer)
+
+def add_we_to_df(df):
+    bpemb_model = BPEmbedding(lang="en", dim=50, vs=50000)
+    #sBERT_model = SentenceTransformer("all-mpnet-base-v2")
+    #tokenizer_BERT = BertTokenizer.from_pretrained('bert-base-uncased')
+    #BERT_model = BertModel.from_pretrained("bert-base-uncased")
+
+    BPEmb_list = []
+
+    for index, pair in df.iterrows():
+        emb1_BPEmb = get_embedding_BPEmb(pair['osm_name'], bpemb_model)
+        emb2_BPEmb = get_embedding_BPEmb(pair['yelp_name'], bpemb_model)
+        #print(pair['osm_name'], " ", pair['yelp_name'])
+        #rint(emb1_BPEmb)
+        #print(emb2_BPEmb)
+        v = np.subtract(emb2_BPEmb, emb1_BPEmb)
+        #print("v: ", v)
+        for i in range(0, len(v[0])):
+            #print('v[i] ', v[0][i])
+            #print(i)
+            df.at[index, 'dim' + str(i)] = v[0][i]
+        #print(df.at[index])
+    #print(df)
+
+        # df_with_similarity_metrics = temp_update_df(df_with_similarity_metrics)
+    # df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    # print('saved')
+    # with pd.ExcelWriter("df_sim_metrics_pickle.xlsx") as writer:
+    #     df_with_similarity_metrics.to_excel(writer)
+
+
+    return df
+
+def add_distance_df():
+    df = load_df()
+    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_tokencount2022-05-05.133508.pkl') # load saved df with features
+    
+    distances = []
+    for index, pair in df.iterrows():
+        distances.append(pair['distance'])
+    
+    df_with_similarity_metrics['distance'] = distances
+    print(df_with_similarity_metrics)
+    df_with_similarity_metrics.to_pickle('./similarity_mertics_df_w_distance_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    print('saved')
 
 def old_plotGradientBoost(model, X_train, X_test):
     explainer = shap.TreeExplainer(model, X_train) 
@@ -346,8 +425,8 @@ def main():
     # df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
     # print('saved')
     #load feature matrix with similarity scores:
-    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_2022-05-04.134203.pkl') # load saved df with features
-    
+    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-05-05.152614.pkl') # load saved df with features
+    print(df_with_similarity_metrics.shape)
     df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
     df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
     df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
@@ -361,40 +440,80 @@ def main():
     #df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
     #df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
     #df_with_similarity_metrics = df_with_similarity_metrics.drop(['bpemb'], axis=1)
-    
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_osm'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_yelp'], axis=1)
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_ratio'], axis=1)
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['distance'], axis=1)
+
+
     X = df_with_similarity_metrics.drop(['match'], axis=1)
     y = df_with_similarity_metrics['match']
     
-    seed = None
+    seed = 0
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
     #model = RandomForestClassifier(n_estimators=300, criterion="entropy", random_state=seed) #default
-    #print("model: ", model)
     #model = xgboost.XGBClassifier(random_state=seed)
-    #model = MLPClassifier(hidden_layer_sizes=(100, 50, 30, 20), batch_size=400, random_state=seed) #best achieved results for validation data seed=0
-    model = MLPClassifier(random_state=seed) #default
+    model = MLPClassifier(hidden_layer_sizes=(100, 50, 30, 20), batch_size=400, random_state=seed) #best achieved results for validation data seed=0
+    #model = MLPClassifier(random_state=seed) #default
+    print("model: ", model)
     
-    # precision, recall, f1, mcc = validateModel(X_train, y_train, model, seed)
-    # print("evaluation metrics for validation data (average for folds):")
-    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    precision, recall, f1, mcc = validateModel(X_train, y_train, model, seed)
+    print("evaluation metrics for validation data (average for folds):")
+    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
     
     #test:
-    precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, model)
-    print("evaluation metrics for test data:")
-    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    # precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, model)
+    # print("evaluation metrics for test data:")
+    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
     
     #plotRandomForest(model, X_train, X_test)
     #plotGradientBoost(model, X_train, X_test)
     #plotNeuralNetwork(model, X_train, X_test)
     
-    
-    # df_with_similarity_metrics = temp_update_df(df_with_similarity_metrics)
-    # df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
-    # print('saved')
-    # with pd.ExcelWriter("df_sim_metrics_pickle.xlsx") as writer:
-    #     df_with_similarity_metrics.to_excel(writer)
+def temp_main():
+    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_tokencount2022-05-05.133508.pkl') # load saved df with features
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['cosine'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaro_winkler'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaccard'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaro'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['levenshtein'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['softtfidf'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['bpemb'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_osm'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_yelp'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_ratio'], axis=1)
 
+    df_with_similarity_metrics = add_we_to_df(df_with_similarity_metrics)
     
+    X = df_with_similarity_metrics.drop(['match'], axis=1)
+    y = df_with_similarity_metrics['match']
     
+    seed = 0
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
+    #model = RandomForestClassifier(n_estimators=300, criterion="entropy", random_state=seed) #default
+    model = xgboost.XGBClassifier(random_state=seed)
+    #model = MLPClassifier(hidden_layer_sizes=(100, 50, 30, 20), batch_size=400, random_state=seed) #best achieved results for validation data seed=0
+    #model = MLPClassifier(random_state=seed) #default
+    print("model: ", model)
+    
+    precision, recall, f1, mcc = validateModel(X_train, y_train, model, seed)
+    print("evaluation metrics for validation data (average for folds):")
+    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    
+    #test:
+    # precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, model)
+    # print("evaluation metrics for test data:")
+    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    
+    plotRandomForest(model, X_train, X_test)
+
 
 if __name__ == "__main__":
     main()
+
