@@ -150,8 +150,43 @@ def predictLoadedModel(X_train, y_train, X_test, y_test, model):
     #X_train_without_names = X_train.drop(['osm_name', 'yelp_name'], axis=1)
     X_test_without_names = X_test.drop(['osm_name', 'yelp_name'], axis=1)
     predictions = model.predict(X_test_without_names.astype(float))
-    return precision_score(predictions, y_test.astype(float)), recall_score(predictions, y_test.astype(float)), f1_score(predictions, y_test.astype(float)), matthews_corrcoef(predictions, y_test.astype(float)), model
+    return predictions, precision_score(predictions, y_test.astype(float)), recall_score(predictions, y_test.astype(float)), f1_score(predictions, y_test.astype(float)), matthews_corrcoef(predictions, y_test.astype(float)), model
+   
+def evaluateModel(X_test, y_test, predictions):
+    #data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
+    #df_fp_fn = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs    
+    df_incorrect = pd.DataFrame(X_test['osm_name'], columns=['osm_name']) #create dataframe where similarity score can be added to pairs
+    df_incorrect['yelp_name'] = X_test['yelp_name']
+    df_incorrect['prediction'] = predictions
+    df_incorrect['correct_label'] = y_test
 
+    df_incorrect = df_incorrect[df_incorrect['prediction'] != df_incorrect['correct_label']]
+    #df_fp_fn = pd.concat([df_fp_fn, df_incorrect])
+    
+    print("EVALUATION for model: ")
+    
+    print("=========================False positives: (non-matches)========================================")
+    for index, pair in df_incorrect.iterrows():
+        if (pair['prediction'] == 1) and (pair['correct_label'] == 0):
+            print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+
+    print("==========================False negatives: (matches)========================================")
+    for index, pair in df_incorrect.iterrows():
+        if (pair['prediction'] == 0) and (pair['correct_label'] == 1):
+            print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+    
+    tn, fp, fn, tp = confusion_matrix(list(y_test), list(predictions), labels=[0, 1]).ravel()
+    
+    print("confusion matrix: ")
+    print("tn: ", tn)
+    print("tp: ", tp)
+    print("fp: ", fp)
+    print("fn: ", fn)
+    
+    #plotRandomForest(model, X_train, X_test)
+    #plotGradientBoost(model, X_train, X_test)
+    #plotNeuralNetwork(model, X_train, X_test)
+    
 
 
 def plotRandomForest(model, X_train, X_test):
@@ -436,6 +471,7 @@ def old_plotGradientBoost(model, X_train, X_test):
     img_name = 'bar_plot_gradient_bpemb_default_whole_dataset' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.png' #TODO save to better file name
     fig.savefig(img_name, dpi=100)
     plt.clf()
+    
 
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
@@ -473,17 +509,17 @@ def main():
     df_with_similarity_metrics = df_with_similarity_metrics.drop(['distance'], axis=1)
     
     #v1:
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaccard'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaro'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['levenshtein'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['softtfidf'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['bpemb'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaccard'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaro'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['levenshtein'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['softtfidf'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['bpemb'], axis=1)
     
     #v2
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
@@ -497,15 +533,15 @@ def main():
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
     
     #v3
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaccard'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaro'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['levenshtein'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaccard'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaro'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['levenshtein'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
 
     #v4
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
@@ -545,16 +581,15 @@ def main():
     
     # load trained model
     
-    #model = pickle.load(open('ML_similarity_metrics_RF_2.pkl', 'rb'))
+    model = pickle.load(open('ML_similarity_metrics_RF_1.pkl', 'rb'))
     
     print("model: ", model)
     
     #predict loaded model
-    #precision, recall, f1, mcc, model = predictLoadedModel(X_train, y_train, X_test, y_test, model)
-    
+    predictions, precision, recall, f1, mcc, model = predictLoadedModel(X_train, y_train, X_test, y_test, model)
     print("evaluation metrics for test data:")
-    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
-    
+    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)    
+    evaluateModel(X_test, y_test, predictions)
     
     #plotRandomForest(model, X_train, X_test)
     #plotGradientBoost(model, X_train, X_test)
