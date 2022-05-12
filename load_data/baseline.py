@@ -61,7 +61,7 @@ def baseline_script(df, sim_funcs, thresholds, metric):
                 scores.append(f1_score)
             elif metric == "matthew":
                 scores.append(matthew_correlation_coefficient)   
-            #print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
+            print("threshold: ", threshold, " similarity func: ", sim_func, " f1: ", f1_score, " precision: ", precision, " recall: ", recall, " matthew: ", matthew_correlation_coefficient)
         
             # print("=========================False positives:========================================")
             # for index, pair in df_scores.iterrows():

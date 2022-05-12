@@ -58,8 +58,8 @@ def get_metrics(df):
     recall = recall_score(df['match'].tolist(), df['score'].tolist())
     f1 = f1_score(df['match'].tolist(), df['score'].tolist())
     matthew = matthews_corrcoef(df['match'].tolist(), df['score'].tolist())
-    #cm = get_confusion_matrix(df)
-    #display_confusion_matrix(cm)
+    cm = get_confusion_matrix(df)
+    display_confusion_matrix(cm)
     return precision, recall, f1, matthew
 
 def get_confusion_matrix(df):

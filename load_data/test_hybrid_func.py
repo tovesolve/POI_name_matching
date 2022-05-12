@@ -223,18 +223,23 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
             for secondary_threshold in secondary_thresholds:
                 df_scores = softTFIDF(df, sim_func, secondary_threshold)
                 #df_scores = TFIDF(df)
+                data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
+                df_scores_excel = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
 
-                # print("=========================False positives:========================================")
-                # for index, pair in df_scores.iterrows():
-                #     if (pair['match'] is 0) and pair['score'] >= primary_threshold:
-                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
-                #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                print("=========================False positives:========================================")
+                for index, pair in df_scores.iterrows():
+                    if (pair['match'] is 0) and pair['score'] >= primary_threshold:
+                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                        #print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                        df_scores_excel = df_scores_excel.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': pair['score']}, ignore_index=True)
 
-                # print("==========================Flase negatives:========================================")
-                # for index, pair in df_scores.iterrows():
-                #     if (pair['match'] is 1) and pair['score'] <= primary_threshold:
-                #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
-                #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+
+                print("==========================Flase negatives:========================================")
+                for index, pair in df_scores.iterrows():
+                    if (pair['match'] is 1) and pair['score'] <= primary_threshold:
+                        print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
+                        #print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
+                        df_scores_excel = df_scores_excel.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': pair['score']}, ignore_index=True)
 
                 # print("==========================True positives:========================================")
                 # for index, pair in df_scores.iterrows():
@@ -242,7 +247,8 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
                 #         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
                 #         print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
 
-
+            with pd.ExcelWriter("SoftTFIDF_fnfp.xlsx") as writer:
+                df_scores_excel.to_excel(writer)
 
                 df_scores = classify_scores(df_scores, primary_threshold)
                 precision, recall, f1_score, matthew_correlation_coefficient = get_metrics(df_scores)
@@ -279,7 +285,7 @@ def main():
     df = drop_rows_with_label(df, 3)
     df = drop_rows_with_label(df, 2)
     #df = drop_exact_rows(df)
-    tfidf_script(df, [jaro_winkler_similarity], [0.25, 0.3, 0.35, 0.4, 0.45], [0.75, 0.8, 0.85, 0.9, 0.95], 'f1_score')
+    tfidf_script(df, [jaro_winkler_similarity], [0.4], [0.9], 'f1_score')
     # df_with_scores = softTFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     # #df_with_scores = TFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     
