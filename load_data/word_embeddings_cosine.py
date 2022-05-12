@@ -102,29 +102,29 @@ def word_embedding_cosine_script(df, thresholds, embeddings_list, metric):
             data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
             df_scores_excel = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
 
-            # print("=========================False positives:========================================")
-            # fp = 0
-            # for index, pair in df_scores.iterrows():
-            #     if (pair['match'] is 0) and pair['score'] >= threshold:
-            #         fp = fp+1
-            #         print(pair['osm_name'], "    ", pair['yelp_name'], " score: ", pair['score'])
-            #         df_scores_excel = df_scores_excel.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': pair['score']}, ignore_index=True)
+            print("=========================False positives:========================================")
+            fp = 0
+            for index, pair in df_scores.iterrows():
+                if (pair['match'] is 0) and pair['score'] >= threshold:
+                    fp = fp+1
+                    print(pair['osm_name'], "    ", pair['yelp_name'], " score: ", pair['score'])
+                    df_scores_excel = df_scores_excel.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': pair['score']}, ignore_index=True)
 
-            #         #print("tokenized to: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['osm_name']))), " and: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['yelp_name']))))
+                    #print("tokenized to: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['osm_name']))), " and: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['yelp_name']))))
 
-            # print("==========================False negatives:========================================")
-            # fn = 0
-            # for index, pair in df_scores.iterrows():
-            #     if (pair['match'] is 1) and pair['score'] <= threshold:
-            #         fn = fn+1
-            #         print(pair['osm_name'], "    ", pair['yelp_name'], "  score: ", pair['score'])
-            #         df_scores_excel = df_scores_excel.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': pair['score']}, ignore_index=True)
-            #         #print("tokenized to: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['osm_name']))), " and: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['yelp_name']))))
-            # print("FP: ", fp)
-            # print("FN: ", fn)
+            print("==========================False negatives:========================================")
+            fn = 0
+            for index, pair in df_scores.iterrows():
+                if (pair['match'] is 1) and pair['score'] <= threshold:
+                    fn = fn+1
+                    print(pair['osm_name'], "    ", pair['yelp_name'], "  score: ", pair['score'])
+                    df_scores_excel = df_scores_excel.append({'osm_name': pair['osm_name'], 'yelp_name': pair['yelp_name'], 'osm_latitude': pair['osm_latitude'], 'osm_longitude': pair['osm_longitude'], 'yelp_latitude': pair['yelp_latitude'], 'yelp_longitude': pair['yelp_longitude'], 'distance': pair['distance'], 'match': pair['match'], 'score': pair['score']}, ignore_index=True)
+                    #print("tokenized to: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['osm_name']))), " and: ", model_BPEmb.encode(concat_token_list(tokenize_name(pair['yelp_name']))))
+            print("FP: ", fp)
+            print("FN: ", fn)
             
-            # with pd.ExcelWriter("BERT_cosine.xlsx") as writer:
-            #     df_scores_excel.to_excel(writer)
+            with pd.ExcelWriter("BPEmb_cosine.xlsx") as writer:
+                df_scores_excel.to_excel(writer)
             
             df_scores = classify_scores(df_scores, threshold)
             precision, recall, f1_score, matthew_correlation_coefficient = get_metrics(df_scores)
@@ -145,7 +145,7 @@ def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
     df = load_df()
     metric = "f1_score"
-    thresholds = [0.5, 0.6, 0.7, 0.8]
+    thresholds = [0.6]
     embeddings_list = [BPEmb]
     #embedding = calc_BPEmb
     #embedding = calc_sBERT
