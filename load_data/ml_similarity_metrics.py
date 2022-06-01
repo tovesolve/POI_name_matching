@@ -79,6 +79,10 @@ def validateModel(X_train, y_train, model, seed):
     recall = []
     f1 = []
     mcc = []
+    tn_tot=0
+    fp_tot=0
+    fn_tot=0
+    tp_tot=0
 
     data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match', 'score']
     df_fp_fn = pd.DataFrame(columns=data_colnames) #create dataframe where similarity score can be added to pairs
@@ -101,20 +105,24 @@ def validateModel(X_train, y_train, model, seed):
         df_incorrect = df_incorrect[df_incorrect['prediction'] != df_incorrect['correct_label']]
         df_fp_fn = pd.concat([df_fp_fn, df_incorrect])
         
-        # print("EVALUATION for split: ")
+        print("EVALUATION for split: ")
         
-        # print("=========================False positives:========================================")
-        # for index, pair in df_incorrect.iterrows():
-        #     if (pair['prediction'] == 1) and (pair['correct_label'] == 0):
-        #         print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+        print("=========================False positives:========================================")
+        for index, pair in df_incorrect.iterrows():
+            if (pair['prediction'] == 1) and (pair['correct_label'] == 0):
+                print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
 
 
-        # print("==========================Flase negatives:========================================")
-        # for index, pair in df_incorrect.iterrows():
-        #     if (pair['prediction'] == 0) and (pair['correct_label'] == 1):
-        #         print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+        print("==========================Flase negatives:========================================")
+        for index, pair in df_incorrect.iterrows():
+            if (pair['prediction'] == 0) and (pair['correct_label'] == 1):
+                print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
         
         tn, fp, fn, tp = confusion_matrix(list(y_val_fold), list(predictions), labels=[0, 1]).ravel()
+        tn_tot = tn_tot+tn
+        fp_tot = fp_tot+fp
+        fn_tot = fn_tot+fn
+        tp_tot = tp_tot+tp
         # print("tn: ", tn)
         # print("tp: ", tp)
         # print("fp: ", fp)
@@ -129,10 +137,19 @@ def validateModel(X_train, y_train, model, seed):
         #print("mcc: ", matthews_corrcoef(predictions, y_val_fold.astype(float)))
         mcc.append(matthews_corrcoef(predictions, y_val_fold.astype(float)))
 
+
+    print("averages cm:")
+    print("tn: ", tn_tot)
+    print("fp: ", fp_tot)
+    print("fn: ", fn_tot)
+    print("tp: ", tp_tot)
+
     avg_precision = sum(precision)/k
     avg_recall = sum(precision)/k
     avg_f1 = sum(f1)/k
     avg_mcc = sum(mcc)/k
+    
+    print()
 
     return avg_precision, avg_recall, avg_f1, avg_mcc
 
@@ -239,7 +256,7 @@ def plotGradientBoost(model, X_train, X_test):
 
 
     explainer = shap.TreeExplainer(model, X_train_without_names)
-    shap_values = explainer.shap_values(X_test_without_names) #ta ut shap-values för varje split
+    shap_values = explainer.shap_values(X_test_without_names, check_additivity=False) #ta ut shap-values för varje split
 
     #print("gradient boost shap: ", shap_values)
 
@@ -270,7 +287,7 @@ def plotGradientBoost(model, X_train, X_test):
     plt.clf()
 
 
-def plotNeuralNetwork(model, X_train, X_test):
+def plotNeuralNetwork(model, predictions, X_train, X_test):
     X_train_without_names = X_train.drop(['osm_name', 'yelp_name'], axis=1).astype(float)
     X_test_without_names = X_test.drop(['osm_name', 'yelp_name'], axis=1).astype(float)
     
@@ -483,8 +500,10 @@ def main():
     # df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
     # print('saved')
     #load feature matrix with similarity scores:
-    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-05-05.152614.pkl') # load saved df with features
-    
+    #df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-05-05.152614.pkl') # load saved df with features
+        
+    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_2022-05-13.112436.pkl') # load saved df with features
+
     
     # UNcommented rows are dropped (not included in feature vector)
     # Commented rows are included in feature vector.
@@ -509,17 +528,18 @@ def main():
     df_with_similarity_metrics = df_with_similarity_metrics.drop(['distance'], axis=1)
     
     #v1:
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaccard'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaro'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['levenshtein'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['softtfidf'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['bpemb'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaccard'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['jaro'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['levenshtein'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['softtfidf'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['bpemb'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['restricted_softtfidf'], axis=1)
     
     #v2
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
@@ -531,6 +551,7 @@ def main():
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['softtfidf'], axis=1)
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['restricted_softtfidf'], axis=1)
     
     #v3
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
@@ -542,18 +563,23 @@ def main():
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf'], axis=1)
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['sbert'], axis=1)
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['tfidf'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['restricted_softtfidf'], axis=1)
 
     #v4
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
-    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
     
-    #v5
+    #v5 
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
     
     #v6: 
     #ingen droppad
+    
+    #v7 
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
     
     X = df_with_similarity_metrics.drop(['match'], axis=1)
     y = df_with_similarity_metrics['match']
@@ -562,38 +588,38 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed, stratify=y)
     #model = RandomForestClassifier(n_estimators=300, criterion="entropy", random_state=seed) # ha med seed på modellen också
     #model = xgboost.XGBClassifier(random_state=seed)
-    #model = MLPClassifier(hidden_layer_sizes=(100, 50, 30, 20), batch_size=400, random_state=seed) #best achieved results for validation data seed=0
+    model = MLPClassifier(hidden_layer_sizes=(100, 50, 30, 20), batch_size=400, random_state=seed) #best achieved results for validation data seed=0
     #model = MLPClassifier(random_state=seed) #default
     
     
     # presentera hur vi kommit fram till hyper parametrarna eller bara förklara hur vi gör? räcker med att förklara hur vi gjort.
     
     # training and validation
-    # precision, recall, f1, mcc = validateModel(X_train, y_train, model, seed)
-    # print("evaluation metrics for validation data (average for folds):")
-    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    #precision, recall, f1, mcc = validateModel(X, y, model, seed)
+    #print("evaluation metrics for validation data (average for folds):")
+    #print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
     
     # train, predict and save model:
-    #precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, model)
-    #pickle.dump(model, open('ML_similarity_metrics_MLP_3.pkl', 'wb'))
+    precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, model)
+    #pickle.dump(model, open('ML_similarity_metrics_RF_8.pkl', 'wb'))
     
     
     
     # load trained model
     
-    model = pickle.load(open('ML_similarity_metrics_RF_1.pkl', 'rb'))
+    #model = pickle.load(open('ML_similarity_metrics_MLP_5.pkl', 'rb'))
     
     print("model: ", model)
     
-    #predict loaded model
+    #predict loaded model, måste avkommentera de droppade raderna för vX ovan för att få rätt shape
     predictions, precision, recall, f1, mcc, model = predictLoadedModel(X_train, y_train, X_test, y_test, model)
-    print("evaluation metrics for test data:")
-    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)    
-    evaluateModel(X_test, y_test, predictions)
+    #print("evaluation metrics for test data:")
+    #print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)    
+    #evaluateModel(X_test, y_test, predictions)
     
     #plotRandomForest(model, X_train, X_test)
     #plotGradientBoost(model, X_train, X_test)
-    #plotNeuralNetwork(model, X_train, X_test)
+    plotNeuralNetwork(model, predictions, X_train, X_test)
     
 def temp_main():
     df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-05-05.152614.pkl') # load saved df with features
