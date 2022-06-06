@@ -214,7 +214,7 @@ def plotRandomForest(model, X_train, X_test):
     #explainer = shap.KernelExplainer(model.predict, samples)
     #shap_values = explainer.shap_values(X_test) #ta ut shap-values för varje split
 
-    explainer = shap.TreeExplainer(model, X_train_without_names)
+    explainer = shap.TreeExplainer(model, X_train_without_names, model_output='probability')
     shap_values = explainer.shap_values(X_test_without_names, check_additivity=False) #ta ut shap-values för varje split
 
     # shap.summary_plot(shap_values[0], X_test_without_names)
@@ -255,7 +255,7 @@ def plotGradientBoost(model, X_train, X_test):
     X_test_without_names = X_test.drop(['osm_name', 'yelp_name'], axis=1).astype(float)
 
 
-    explainer = shap.TreeExplainer(model, X_train_without_names)
+    explainer = shap.TreeExplainer(model, X_train_without_names, model_output='probability')
     shap_values = explainer.shap_values(X_test_without_names, check_additivity=False) #ta ut shap-values för varje split
 
     #print("gradient boost shap: ", shap_values)
@@ -502,8 +502,9 @@ def main():
     #load feature matrix with similarity scores:
     #df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-05-05.152614.pkl') # load saved df with features
         
-    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_2022-05-13.112436.pkl') # load saved df with features
-
+        
+    #df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_2022-05-13.112436.pkl')
+    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-06-03.165524.pkl') # load saved df with features
     
     # UNcommented rows are dropped (not included in feature vector)
     # Commented rows are included in feature vector.
@@ -566,13 +567,13 @@ def main():
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['restricted_softtfidf'], axis=1)
 
     #v4
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
-    
-    #v5 
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
+    # df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
+    
+    #v5 
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
     
     #v6: 
     #ingen droppad
@@ -586,40 +587,58 @@ def main():
     
     seed = 0
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed, stratify=y)
-    #model = RandomForestClassifier(n_estimators=300, criterion="entropy", random_state=seed) # ha med seed på modellen också
-    #model = xgboost.XGBClassifier(random_state=seed)
-    model = MLPClassifier(hidden_layer_sizes=(100, 50, 30, 20), batch_size=400, random_state=seed) #best achieved results for validation data seed=0
+    rf_model = RandomForestClassifier(n_estimators=300, criterion="entropy", random_state=seed) # ha med seed på modellen också
+    xgb_model = xgboost.XGBClassifier(random_state=seed)
+    mlp_model = MLPClassifier(hidden_layer_sizes=(100, 50, 30, 20), batch_size=400, random_state=seed) #best achieved results for validation data seed=0
     #model = MLPClassifier(random_state=seed) #default
     
     
     # presentera hur vi kommit fram till hyper parametrarna eller bara förklara hur vi gör? räcker med att förklara hur vi gjort.
     
     # training and validation
-    #precision, recall, f1, mcc = validateModel(X, y, model, seed)
-    #print("evaluation metrics for validation data (average for folds):")
-    #print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    # precision, recall, f1, mcc = validateModel(X, y, rf_model, seed)
+    # print("RF")
+    # print("evaluation metrics for validation data (average for folds):")
+    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    # precision, recall, f1, mcc = validateModel(X, y, xgb_model, seed)
+    # print("XGB")
+    # print("evaluation metrics for validation data (average for folds):")
+    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    # precision, recall, f1, mcc = validateModel(X, y, mlp_model, seed)
+    # print("MLP")
+    # print("evaluation metrics for validation data (average for folds):")
+    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
     
     # train, predict and save model:
-    precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, model)
+    print("RF")
+    precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, rf_model)
+    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)  
+    precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, xgb_model)
+    print("XGB")
+    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)  
+    precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, mlp_model)
+    print("MLP")
+    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)  
+
     #pickle.dump(model, open('ML_similarity_metrics_RF_8.pkl', 'wb'))
     
     
     
     # load trained model
     
-    #model = pickle.load(open('ML_similarity_metrics_MLP_5.pkl', 'rb'))
+    #model = pickle.load(open('ML_similarity_metrics_XGB_5.pkl', 'rb'))
     
-    print("model: ", model)
+    #print("model: ", model)
     
     #predict loaded model, måste avkommentera de droppade raderna för vX ovan för att få rätt shape
-    predictions, precision, recall, f1, mcc, model = predictLoadedModel(X_train, y_train, X_test, y_test, model)
+    #predictions, precision, recall, f1, mcc, model = predictLoadedModel(X_train, y_train, X_test, y_test, model)
     #print("evaluation metrics for test data:")
     #print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)    
     #evaluateModel(X_test, y_test, predictions)
     
-    #plotRandomForest(model, X_train, X_test)
-    #plotGradientBoost(model, X_train, X_test)
-    plotNeuralNetwork(model, predictions, X_train, X_test)
+    #plotRandomForest(rf_model, X_train, X_test)
+    #plotGradientBoost(xgb_model, X_train, X_test)
+    #plotNeuralNetwork(model, predictions, X_train, X_test)
     
 def temp_main():
     df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-05-05.152614.pkl') # load saved df with features
