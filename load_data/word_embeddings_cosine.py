@@ -146,7 +146,7 @@ def main():
     df = load_df()
     metric = "f1_score"
     thresholds = [0.6]
-    embeddings_list = [BPEmb]
+    embeddings_list = [BPEmb] #BERT, sBERT, BPEmb
     #embedding = calc_BPEmb
     #embedding = calc_sBERT
     #print("BPEmb")
