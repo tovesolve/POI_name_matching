@@ -105,18 +105,18 @@ def validateModel(X_train, y_train, model, seed):
         df_incorrect = df_incorrect[df_incorrect['prediction'] != df_incorrect['correct_label']]
         df_fp_fn = pd.concat([df_fp_fn, df_incorrect])
         
-        print("EVALUATION for split: ")
+        # print("EVALUATION for split: ")
         
-        print("=========================False positives:========================================")
-        for index, pair in df_incorrect.iterrows():
-            if (pair['prediction'] == 1) and (pair['correct_label'] == 0):
-                print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+        # print("=========================False positives:========================================")
+        # for index, pair in df_incorrect.iterrows():
+        #     if (pair['prediction'] == 1) and (pair['correct_label'] == 0):
+        #         print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
 
 
-        print("==========================Flase negatives:========================================")
-        for index, pair in df_incorrect.iterrows():
-            if (pair['prediction'] == 0) and (pair['correct_label'] == 1):
-                print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
+        # print("==========================Flase negatives:========================================")
+        # for index, pair in df_incorrect.iterrows():
+        #     if (pair['prediction'] == 0) and (pair['correct_label'] == 1):
+        #         print(pair['osm_name'], "    ", pair['yelp_name'], "    prediction: ", pair['prediction'], "  correct: ", pair['correct_label'])
         
         tn, fp, fn, tp = confusion_matrix(list(y_val_fold), list(predictions), labels=[0, 1]).ravel()
         tn_tot = tn_tot+tn
@@ -145,11 +145,10 @@ def validateModel(X_train, y_train, model, seed):
     print("tp: ", tp_tot)
 
     avg_precision = sum(precision)/k
-    avg_recall = sum(precision)/k
+    avg_recall = sum(recall)/k
     avg_f1 = sum(f1)/k
     avg_mcc = sum(mcc)/k
-    
-    print()
+
 
     return avg_precision, avg_recall, avg_f1, avg_mcc
 
@@ -525,7 +524,7 @@ def main():
     
     df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_osm'], axis=1)
     df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_yelp'], axis=1)
-    df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_ratio'], axis=1)
+    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['tlen_ratio'], axis=1)
     df_with_similarity_metrics = df_with_similarity_metrics.drop(['distance'], axis=1)
     
     #v1:
@@ -572,8 +571,8 @@ def main():
     # df_with_similarity_metrics = df_with_similarity_metrics.drop(['bert'], axis=1)
     
     #v5 
-    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
-    #df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BPEmb'], axis=1)
+    df_with_similarity_metrics = df_with_similarity_metrics.drop(['semanticsofttfidf_BERT'], axis=1)
     
     #v6: 
     #ingen droppad
@@ -596,29 +595,29 @@ def main():
     # presentera hur vi kommit fram till hyper parametrarna eller bara förklara hur vi gör? räcker med att förklara hur vi gjort.
     
     # training and validation
-    # precision, recall, f1, mcc = validateModel(X, y, rf_model, seed)
-    # print("RF")
-    # print("evaluation metrics for validation data (average for folds):")
-    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
-    # precision, recall, f1, mcc = validateModel(X, y, xgb_model, seed)
-    # print("XGB")
-    # print("evaluation metrics for validation data (average for folds):")
-    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
-    # precision, recall, f1, mcc = validateModel(X, y, mlp_model, seed)
-    # print("MLP")
-    # print("evaluation metrics for validation data (average for folds):")
-    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    precision, recall, f1, mcc = validateModel(X, y, rf_model, seed)
+    print("RF")
+    print("evaluation metrics for validation data (average for folds):")
+    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    precision, recall, f1, mcc = validateModel(X, y, xgb_model, seed)
+    print("XGB")
+    print("evaluation metrics for validation data (average for folds):")
+    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
+    precision, recall, f1, mcc = validateModel(X, y, mlp_model, seed)
+    print("MLP")
+    print("evaluation metrics for validation data (average for folds):")
+    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)
     
     # train, predict and save model:
-    print("RF")
-    precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, rf_model)
-    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)  
-    precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, xgb_model)
-    print("XGB")
-    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)  
-    precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, mlp_model)
-    print("MLP")
-    print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)  
+    # print("RF")
+    # precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, rf_model)
+    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)  
+    # precision, recall, f1, mcc, model = testModel(X_train, y_train, X_test, y_test, xgb_model)
+    # print("XGB")
+    # print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)  
+    #precision, recall, f1, mcc, mlp_model = testModel(X_train, y_train, X_test, y_test, mlp_model)
+    #print("MLP")
+    #print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)  
 
     #pickle.dump(model, open('ML_similarity_metrics_RF_8.pkl', 'wb'))
     
@@ -631,14 +630,14 @@ def main():
     #print("model: ", model)
     
     #predict loaded model, måste avkommentera de droppade raderna för vX ovan för att få rätt shape
-    #predictions, precision, recall, f1, mcc, model = predictLoadedModel(X_train, y_train, X_test, y_test, model)
+    #predictions, precision, recall, f1, mcc, mlp_model = predictLoadedModel(X_train, y_train, X_test, y_test, mlp_model)
     #print("evaluation metrics for test data:")
     #print("precision: ", precision, " recall: ", recall, " f1: ", f1, " mcc: ", mcc)    
     #evaluateModel(X_test, y_test, predictions)
     
     #plotRandomForest(rf_model, X_train, X_test)
     #plotGradientBoost(xgb_model, X_train, X_test)
-    #plotNeuralNetwork(model, predictions, X_train, X_test)
+    #plotNeuralNetwork(mlp_model, predictions, X_train, X_test)
     
 def temp_main():
     df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-05-05.152614.pkl') # load saved df with features
