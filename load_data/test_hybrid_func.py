@@ -3,6 +3,7 @@ from traceback import print_tb
 from drop_label import drop_rows_with_label, drop_exact_rows
 from baseline import calculate_similarity_score
 from drop_label import *
+from handle_df import count_classes
 from token_based_func import *
 from evaluation_metrics import *
 import matplotlib.pyplot as plt
@@ -228,6 +229,8 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
 
                 print("=========================False positives:========================================")
                 for index, pair in df_scores.iterrows():
+                    
+                    print(pair)
                     if (pair['match'] is 0) and pair['score'] >= primary_threshold:
                         print(pair['osm_name'], "    ", pair['yelp_name'], "    match: ", pair['match'], "  score: ", pair['score'])
                         #print("tokenized to: ", tokenize(pair['osm_name']), " and: ", tokenize(pair['yelp_name']))
@@ -276,17 +279,90 @@ def tfidf_script(df, sim_funcs, primary_thresholds, secondary_thresholds, metric
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
 
+
     df1 = pd.read_pickle('v0.5_df_pairs_florida2022-02-28.094015.pkl')
-    df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')  
+    df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl')
     df3 = pd.read_pickle('v0_df_pairs_vancouver_all2022-03-28.115404.pkl')
-    df4 = pd.read_pickle('v0_df_pairs_vancouver_schools_libraries_community2022-03-25.153749.pkl') 
-    df5 = pd.read_pickle('v0.5_df_pairs_nc2022-03-25.152112.pkl') 
+    df4 = pd.read_pickle('v0_df_pairs_vancouver_schools_libraries_community2022-03-25.153749.pkl')
+    df5 = pd.read_pickle('v0.5_df_pairs_nc2022-03-25.152112.pkl')
     df = pd.concat([df1, df2, df3, df4, df5])
     df = drop_rows_with_label(df, 3)
     df = drop_rows_with_label(df, 2)
+    
+    for index, pair in df.iterrows():
+        print(pair)
+    
+
+    
+    
+    # df1 = pd.read_pickle('v0.5_df_pairs_florida2022-02-28.094015.pkl')
+    # list1 = []
+    # for index, pair in df1.iterrows():
+    #     list1.append(1)
+    # df1["df"] = list1
+    
+    # df2 = pd.read_pickle('v0_df_pairs_boston2022-02-28.110406.pkl') 
+    # list2 = []
+    # for index, pair in df2.iterrows():
+    #     list2.append(2)
+    # df2["df"] = list2
+     
+    # df3 = pd.read_pickle('v0_df_pairs_vancouver_all2022-03-28.115404.pkl')
+    # list3 = []
+    # for index, pair in df3.iterrows():
+    #     list3.append(3)
+    # df3["df"] = list3
+    
+    # df4 = pd.read_pickle('v0_df_pairs_vancouver_schools_libraries_community2022-03-25.153749.pkl') 
+    # list4 = []
+    # for index, pair in df4.iterrows():
+    #     list4.append(4)
+    # df4["df"] = list4
+    
+    # df5 = pd.read_pickle('v0.5_df_pairs_nc2022-03-25.152112.pkl') 
+    # list5 = []
+    # for index, pair in df5.iterrows():
+    #     list5.append(5)
+    # df5["df"] = list5
+    
+    # df = pd.concat([df1, df2, df3, df4, df5])
+    
+    # #df = df1
+    # print(df)
+    
+    
+    # #df = df5
+    # df = drop_rows_with_label(df, 3)
+    # df = drop_rows_with_label(df, 2)
+    
+    # c0 = 0
+    # c1 = 0
+    # exact = 0
+    
+    # for index, pair in df.iterrows():
+    #     if pair["df"] == 5:
+    #         if pair['match'] == 0:
+    #             c0 += 1
+    #         elif pair['match'] == 1:
+    #             c1 += 1
+    #             if pair['osm_name'] == pair['yelp_name']:
+    #                 exact += 1
+    #         else:
+    #             print(pair)
+    
+    
+    # print("total: ", c0+c1)
+    # #print("c0 ", c0)
+    # print("matches: ", c1)
+    # print("exact", exact)
+    # #print(df)
+    
     #df = drop_exact_rows(df)
-    tfidf_script(df, [jaro_winkler_similarity], [0.4], [0.9], 'f1_score')
-    # df_with_scores = softTFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
+    #print(count_classes(df))
+    #count_0, count_1, count_2, count_3, class0_pairs, class1_pairs, class2_pairs, class3_pairs
+    
+    #tfidf_script(df, [jaro_winkler_similarity], [0.4], [0.85], 'f1_score')
+    #df_with_scores = softTFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     # #df_with_scores = TFIDF(df, secondary_func=jaro_winkler_similarity, secondary_threshold=0.8)
     
     # # for index, pair in df_with_scores.iterrows():
