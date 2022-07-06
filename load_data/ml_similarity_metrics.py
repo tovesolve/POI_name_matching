@@ -12,6 +12,7 @@ from tensorflow import keras
 import token_based_func
 import test_hybrid_func
 import semantic_soft_tfidf
+import restricted_softtfidf
 from bpemb import BPEmb as BPEmbedding
 import word_embeddings_cosine
 import word_embeddings
@@ -388,6 +389,26 @@ def temp_update_df(df):
 
     return df
 
+def update_softTFIDF():
+    df = load_df() #alla POIs 
+    corpus_list, document_frequency = prepareCorpus(df)
+
+    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_2022-05-13.112436.pkl') # load saved df with features
+
+    soft_scores = []
+    for index, pair in df.iterrows():
+        softtfidf_score = test_hybrid_func.calc_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, 0.85, character_based_func.jaro_winkler_similarity, document_frequency)
+        soft_scores.append(softtfidf_score)
+    
+    print("shape before: ", df_with_similarity_metrics.shape)
+    df_with_similarity_metrics['softtfidf'] = soft_scores
+    print("shape after: ", df_with_similarity_metrics.shape)
+    df_with_similarity_metrics.to_pickle('./similarity_mertics_df_w_distance_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    print('saved')
+    
+    with pd.ExcelWriter("df_sim_metrics_pickle_2022_06_03.xlsx") as writer:
+        df_with_similarity_metrics.to_excel(writer)
+
 
 def add_tokencount_to_df(df):
     token_counts_osm = []
@@ -459,6 +480,37 @@ def add_distance_df():
     df_with_similarity_metrics.to_pickle('./similarity_mertics_df_w_distance_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
     print('saved')
 
+def add_restricted_scores_to_pickle():
+    df = load_df()
+    df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-05-05.152614.pkl') # load saved df with features
+    print("Shape for df_with_similarity_metrics: ", df_with_similarity_metrics.shape)
+    
+    restrictedsofttfidf_score_list = []
+    for index, pair in df.iterrows():
+        data_colnames = ['osm_name', 'yelp_name', 'osm_latitude', 'osm_longitude', 'yelp_latitude', 'yelp_longitude', 'distance', 'match']
+        df_restricted = pd.DataFrame(columns=data_colnames) #create dataframe with nearby POIs
+        original_osm, original_yelp = pair['osm_name'], pair['yelp_name']
+        for i, p in df.iterrows():
+            if p['osm_name'] == original_osm or p['yelp_name'] == original_yelp:
+                df_restricted = df_restricted.append({'osm_name': p['osm_name'], 'yelp_name': p['yelp_name'], 'osm_latitude': p['osm_latitude'], 'osm_longitude': p['osm_longitude'], 'yelp_latitude': p['yelp_latitude'], 'yelp_longitude': p['yelp_longitude'], 'distance': p['distance'], 'match': p['match']}, ignore_index=True)
+        
+        corpus_list, document_frequency = prepareCorpus(df_restricted) #create corpus from dataframe with nearby POIs
+        #print("corpus list for ", pair['osm_name'], " and ", pair['yelp_name'], ": ", corpus_list)
+
+        score = restricted_softtfidf.calc_restricted_softTFIDF_for_pair(pair['osm_name'], pair['yelp_name'], corpus_list, 0.95, character_based_func.jaro_winkler_similarity, document_frequency)
+        restrictedsofttfidf_score_list.append(score)
+
+    df_with_similarity_metrics['restricted_softtfidf'] = restrictedsofttfidf_score_list
+    print("Shape for df after adding new column: ", df_with_similarity_metrics.shape)
+    df_with_similarity_metrics.to_pickle('./similarity_mertics_df_' + str(datetime.datetime.now().strftime("%Y-%m-%d.%H%M%S")) + '.pkl') # save dataframe to pickle
+    print('saved')
+    with pd.ExcelWriter("df_sim_metrics_pickle.xlsx") as writer:
+        df_with_similarity_metrics.to_excel(writer)
+
+    return df
+
+
+
 def old_plotGradientBoost(model, X_train, X_test):
     explainer = shap.TreeExplainer(model, X_train) 
     shap_values = explainer.shap_values(X_test) #ta ut shap-values för varje split
@@ -488,6 +540,10 @@ def old_plotGradientBoost(model, X_train, X_test):
     fig.savefig(img_name, dpi=100)
     plt.clf()
     
+
+def main_for_update():
+    update_softTFIDF()
+    print("Done")
 
 def main():
     pd.set_option("display.max_rows", None, "display.max_columns", None) #show all rows when printing dataframe
@@ -641,7 +697,7 @@ def main():
     
 def temp_main():
     df_with_similarity_metrics = pd.read_pickle('similarity_mertics_df_w_distance_2022-05-05.152614.pkl') # load saved df with features
-    
+
     # UNcommented rows are dropped (not included in feature vector)
     # Commented rows are included in feature vector.
     
